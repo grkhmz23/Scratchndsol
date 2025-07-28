@@ -68,6 +68,8 @@ export function ScratchCard({ ticketCost, onGameComplete, onNewGame, walletAddre
     },
   });
 
+
+
   const handleBuyCard = async () => {
     if (!walletAddress) {
       toast({
@@ -131,6 +133,8 @@ export function ScratchCard({ ticketCost, onGameComplete, onNewGame, walletAddre
       // All slots revealed, check for win
       const gameResult = checkWin(gameSymbols);
       const winAmount = gameResult.isWin ? calculateWinAmount(ticketCost, gameResult.multiplier) : 0;
+      
+
       
       // Handle payout if won
       if (gameResult.isWin && walletAddress) {

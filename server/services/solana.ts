@@ -45,6 +45,14 @@ export class SolanaService {
 
   async sendPayout(playerWallet: string, amountSol: number): Promise<string | null> {
     try {
+      // Check if this is a demo wallet (starts with "Demo")
+      if (playerWallet.startsWith('Demo')) {
+        // Simulate successful payout for demo mode
+        const demoSignature = `demo_payout_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        console.log(`Demo payout simulated: ${amountSol} SOL to ${playerWallet}, signature: ${demoSignature}`);
+        return demoSignature;
+      }
+
       const playerPublicKey = new PublicKey(playerWallet);
       const lamports = Math.round(amountSol * LAMPORTS_PER_SOL);
 

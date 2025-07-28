@@ -22,17 +22,17 @@ The frontend is built with React 18 using TypeScript, leveraging modern web tech
 The backend follows a simple Express.js server architecture:
 - **Runtime**: Node.js with TypeScript
 - **Framework**: Express.js for REST API endpoints
-- **Storage**: In-memory storage implementation (MemStorage) with interface for easy database migration
-- **Blockchain Integration**: Solana Web3.js for blockchain interactions
+- **Storage**: PostgreSQL database with Drizzle ORM (DatabaseStorage implementation)
+- **Blockchain Integration**: Solana Web3.js for blockchain interactions with demo mode support
 - **Development**: Development server with hot module replacement via Vite
 
 ### Database Design
-The application uses Drizzle ORM with PostgreSQL schema definitions but currently implements in-memory storage:
-- **ORM**: Drizzle ORM configured for PostgreSQL
+The application uses PostgreSQL with Drizzle ORM for data persistence:
+- **ORM**: Drizzle ORM with Neon PostgreSQL serverless adapter
 - **Tables**: 
-  - `games` - Stores game sessions, purchases, and results
-  - `gameStats` - Tracks overall game statistics and pool balance
-- **Current Implementation**: Memory-based storage for development/testing
+  - `games` - Stores game sessions, purchases, and results with full game history
+  - `gameStats` - Tracks overall game statistics and pool balance in real-time
+- **Implementation**: Full PostgreSQL integration with persistent data storage
 
 ## Key Components
 
@@ -87,6 +87,14 @@ The application uses Drizzle ORM with PostgreSQL schema definitions but currentl
 - **Vite**: Build tool and development server
 - **TypeScript**: Type safety and better developer experience
 - **ESBuild**: Fast JavaScript bundler for production builds
+- **Drizzle Kit**: Database migration and schema management
+
+## Recent Changes
+- **January 28, 2025**: Added full PostgreSQL database integration
+  - Migrated from in-memory storage to persistent database
+  - Implemented demo mode for wallet connection and payouts
+  - Added proper error handling for demo vs production modes
+  - All game data now persists between server restarts
 
 ## Deployment Strategy
 

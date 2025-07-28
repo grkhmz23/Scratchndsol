@@ -30,7 +30,11 @@ export function GameResultModal({ result, onClose, onNewGame }: GameResultModalP
             <div className="text-neon-cyan mb-6">
               {result.multiplier}x Multiplier!
             </div>
-            <div className="text-sm text-gray-300 mb-6">Prize sent to your wallet</div>
+            <div className="text-sm text-gray-300 mb-4">Prize sent to your wallet</div>
+            <div className="bg-neon-orange/10 border border-neon-orange/30 rounded-lg p-3 mb-4">
+              <div className="text-neon-orange text-xs font-bold">🎮 DEMO MODE</div>
+              <div className="text-gray-300 text-xs">In production, SOL would be sent to your actual wallet</div>
+            </div>
           </div>
         ) : (
           <div>
