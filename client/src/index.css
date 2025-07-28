@@ -1,0 +1,171 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+
+:root {
+  --background: hsl(240, 15%, 6%);
+  --foreground: hsl(0, 0%, 98%);
+  --muted: hsl(240, 10%, 15%);
+  --muted-foreground: hsl(240, 5%, 65%);
+  --popover: hsl(240, 15%, 8%);
+  --popover-foreground: hsl(0, 0%, 98%);
+  --card: hsl(240, 15%, 8%);
+  --card-foreground: hsl(0, 0%, 98%);
+  --border: hsl(180, 100%, 50%);
+  --input: hsl(240, 10%, 15%);
+  --primary: hsl(180, 100%, 50%);
+  --primary-foreground: hsl(240, 15%, 6%);
+  --secondary: hsl(240, 10%, 15%);
+  --secondary-foreground: hsl(0, 0%, 98%);
+  --accent: hsl(240, 10%, 15%);
+  --accent-foreground: hsl(0, 0%, 98%);
+  --destructive: hsl(0, 84%, 60%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --ring: hsl(180, 100%, 50%);
+  --radius: 0.5rem;
+  
+  /* Custom neon colors */
+  --neon-cyan: hsl(180, 100%, 50%);
+  --neon-orange: hsl(30, 100%, 50%);
+  --deep-space: hsl(240, 15%, 6%);
+  --dark-purple: hsl(260, 50%, 15%);
+  --electric-blue: hsl(210, 100%, 50%);
+  --neon-gold: hsl(45, 100%, 50%);
+  --success-green: hsl(150, 100%, 60%);
+  --error-red: hsl(0, 84%, 60%);
+}
+
+.dark {
+  --background: hsl(240, 15%, 6%);
+  --foreground: hsl(0, 0%, 98%);
+  --muted: hsl(240, 10%, 15%);
+  --muted-foreground: hsl(240, 5%, 65%);
+  --popover: hsl(240, 15%, 8%);
+  --popover-foreground: hsl(0, 0%, 98%);
+  --card: hsl(240, 15%, 8%);
+  --card-foreground: hsl(0, 0%, 98%);
+  --border: hsl(180, 100%, 50%);
+  --input: hsl(240, 10%, 15%);
+  --primary: hsl(180, 100%, 50%);
+  --primary-foreground: hsl(240, 15%, 6%);
+  --secondary: hsl(240, 10%, 15%);
+  --secondary-foreground: hsl(0, 0%, 98%);
+  --accent: hsl(240, 10%, 15%);
+  --accent-foreground: hsl(0, 0%, 98%);
+  --destructive: hsl(0, 84%, 60%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --ring: hsl(180, 100%, 50%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-orbitron antialiased bg-background text-foreground;
+    background: var(--deep-space);
+    font-family: 'Orbitron', monospace;
+  }
+}
+
+@layer utilities {
+  .font-orbitron {
+    font-family: 'Orbitron', monospace;
+  }
+  
+  .text-neon-cyan {
+    color: var(--neon-cyan);
+  }
+  
+  .text-neon-orange {
+    color: var(--neon-orange);
+  }
+  
+  .text-neon-gold {
+    color: var(--neon-gold);
+  }
+  
+  .text-success-green {
+    color: var(--success-green);
+  }
+  
+  .text-error-red {
+    color: var(--error-red);
+  }
+  
+  .text-electric-blue {
+    color: var(--electric-blue);
+  }
+  
+  .bg-deep-space {
+    background-color: var(--deep-space);
+  }
+  
+  .bg-dark-purple {
+    background-color: var(--dark-purple);
+  }
+  
+  .border-neon-cyan {
+    border-color: var(--neon-cyan);
+  }
+  
+  .border-neon-orange {
+    border-color: var(--neon-orange);
+  }
+  
+  .border-neon-gold {
+    border-color: var(--neon-gold);
+  }
+  
+  .border-electric-blue {
+    border-color: var(--electric-blue);
+  }
+  
+  .shadow-neon-cyan {
+    box-shadow: 0 0 20px var(--neon-cyan), 0 0 40px var(--neon-cyan), 0 0 60px var(--neon-cyan);
+  }
+  
+  .shadow-neon-orange {
+    box-shadow: 0 0 20px var(--neon-orange), 0 0 40px var(--neon-orange), 0 0 60px var(--neon-orange);
+  }
+  
+  .shadow-neon-gold {
+    box-shadow: 0 0 20px var(--neon-gold), 0 0 40px var(--neon-gold);
+  }
+  
+  .animate-pulse-neon {
+    animation: pulse-neon 2s ease-in-out infinite;
+  }
+  
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+  
+  .animate-scratch-reveal {
+    animation: scratch-reveal 0.5s ease-in-out;
+  }
+}
+
+@keyframes pulse-neon {
+  0%, 100% { 
+    box-shadow: 0 0 20px var(--neon-cyan), 0 0 40px var(--neon-cyan), 0 0 60px var(--neon-cyan);
+    opacity: 1;
+  }
+  50% { 
+    box-shadow: 0 0 10px var(--neon-cyan), 0 0 20px var(--neon-cyan), 0 0 30px var(--neon-cyan);
+    opacity: 0.8;
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes scratch-reveal {
+  0% { opacity: 0; transform: scale(0.8); }
+  100% { opacity: 1; transform: scale(1); }
+}
