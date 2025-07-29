@@ -148,7 +148,7 @@ export function ScratchZone({
   }, []);
 
   return (
-    <div className="relative">
+    <div className="relative scratch-zone">
       {/* Background symbol */}
       <div 
         className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-dark-purple to-deep-space rounded-lg border-2 border-neon-gold"

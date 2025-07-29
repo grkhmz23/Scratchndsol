@@ -2,70 +2,34 @@ import { useState } from 'react';
 import { SimpleWalletButton } from '@/components/simple-wallet-button';
 import { ModeToggle } from '@/components/mode-toggle';
 import { useGameMode } from '@/contexts/game-mode-context';
-import { Card, CardContent } from '@/components/ui/card';
-import { TicketSelection } from '@/components/ticket-selection';
-import { ScratchCard } from '@/components/scratch-card-new';
+import { ScratchCardGrid } from '@/components/scratch-card-grid';
+import { ScratchCardModal } from '@/components/scratch-card-modal';
 import { GameStats } from '@/components/game-stats';
 import { RecentWinners } from '@/components/recent-winners';
-import { GameResultModal } from '@/components/game-result-modal';
 import logoPath from '@assets/ChatGPT Image 28 juil. 2025, 10_17_36_1753690663892.png';
 
-interface GameState {
-  selectedTicket: number | null;
-  symbols: string[];
-  isRevealed: boolean;
-  gameResult: {
-    isWin: boolean;
-    multiplier: number;
-    winAmount: number;
-  } | null;
-  showResult: boolean;
-  walletAddress: string | null;
-}
-
 export default function Home() {
-  const { isDemoMode, isRealMode } = useGameMode();
-  const [gameState, setGameState] = useState<GameState>({
-    selectedTicket: null,
-    symbols: [],
-    isRevealed: false,
-    gameResult: null,
-    showResult: false,
-    walletAddress: null,
-  });
+  const { isDemoMode } = useGameMode();
+  const [selectedTicket, setSelectedTicket] = useState<number | null>(null);
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const [showModal, setShowModal] = useState(false);
 
-  const handleTicketSelect = (ticketCost: number) => {
-    setGameState(prev => ({
-      ...prev,
-      selectedTicket: ticketCost,
-      symbols: [],
-      isRevealed: false,
-      gameResult: null,
-      showResult: false,
-    }));
+  const handleCardSelect = (ticketCost: number) => {
+    setSelectedTicket(ticketCost);
+    setShowModal(true);
   };
 
   const handleGameComplete = (result: { isWin: boolean; multiplier: number; winAmount: number }) => {
-    setGameState(prev => ({
-      ...prev,
-      gameResult: result,
-      showResult: true,
-    }));
+    // Game completed, modal will handle the result display
   };
 
   const handleWalletConnect = (publicKey: string) => {
-    setGameState(prev => ({ ...prev, walletAddress: publicKey }));
+    setWalletAddress(publicKey);
   };
 
-  const handleNewGame = () => {
-    setGameState(prev => ({
-      selectedTicket: null,
-      symbols: [],
-      isRevealed: false,
-      gameResult: null,
-      showResult: false,
-      walletAddress: prev.walletAddress, // Keep wallet connected
-    }));
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setSelectedTicket(null);
   };
 
   return (
@@ -87,7 +51,7 @@ export default function Home() {
           {/* Mode Toggle and Wallet Connection */}
           <div className="flex items-center space-x-4">
             <ModeToggle />
-            {isRealMode && <SimpleWalletButton onConnect={handleWalletConnect} />}
+            {!isDemoMode && <SimpleWalletButton onConnect={handleWalletConnect} />}
           </div>
         </div>
       </header>
@@ -97,37 +61,25 @@ export default function Home() {
         {/* Game Stats */}
         <GameStats />
 
-        {/* Ticket Selection - Always Show */}
-        {!gameState.selectedTicket && (
-          <TicketSelection onTicketSelect={handleTicketSelect} />
-        )}
-
-        {/* Scratch Card Game */}
-        {gameState.selectedTicket && (
-          <ScratchCard
-            ticketCost={gameState.selectedTicket}
-            onGameComplete={handleGameComplete}
-            onNewGame={handleNewGame}
-            walletAddress={isDemoMode ? "demo-wallet" : (gameState.walletAddress || "")}
-            isDemoMode={isDemoMode}
-            onWalletConnect={() => {
-              // Auto-trigger wallet connection when needed
-              const walletButton = document.querySelector('[data-wallet-button]') as HTMLButtonElement;
-              walletButton?.click();
-            }}
-          />
-        )}
+        {/* Scratch Card Grid - Always Show */}
+        <ScratchCardGrid 
+          onCardSelect={handleCardSelect}
+          isDemoMode={isDemoMode}
+        />
 
         {/* Recent Winners */}
         <RecentWinners />
       </main>
 
-      {/* Game Result Modal */}
-      {gameState.showResult && gameState.gameResult && (
-        <GameResultModal
-          result={gameState.gameResult}
-          onClose={() => setGameState(prev => ({ ...prev, showResult: false }))}
-          onNewGame={handleNewGame}
+      {/* Scratch Card Modal */}
+      {showModal && selectedTicket && (
+        <ScratchCardModal
+          isOpen={showModal}
+          onClose={handleCloseModal}
+          ticketCost={selectedTicket}
+          walletAddress={isDemoMode ? "demo-wallet" : (walletAddress || "")}
+          isDemoMode={isDemoMode}
+          onGameComplete={handleGameComplete}
         />
       )}
 

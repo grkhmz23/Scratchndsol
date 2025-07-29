@@ -7,6 +7,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { ScratchZone } from '@/components/scratch-zone';
 import { X } from 'lucide-react';
+import scratchNSolLogo from '@assets/ChatGPT Image 28 juil. 2025, 10_17_36_1753690663892.png';
 
 interface ScratchCardModalProps {
   isOpen: boolean;
@@ -22,6 +23,47 @@ interface GameResult {
   multiplier: number;
   winAmount: number;
 }
+
+const getCardDesign = (ticketCost: number) => {
+  const designs = {
+    0.1: {
+      name: "BRONZE",
+      gradient: "from-amber-600 via-yellow-700 to-amber-800",
+      borderColor: "border-amber-500",
+      accentColor: "text-amber-300",
+      bgPattern: "bg-gradient-to-br from-amber-900/20 to-orange-900/30",
+    },
+    0.2: {
+      name: "SILVER", 
+      gradient: "from-slate-400 via-gray-500 to-slate-600",
+      borderColor: "border-slate-400",
+      accentColor: "text-slate-300",
+      bgPattern: "bg-gradient-to-br from-slate-800/20 to-gray-800/30",
+    },
+    0.5: {
+      name: "GOLD",
+      gradient: "from-yellow-400 via-amber-500 to-yellow-600",
+      borderColor: "border-yellow-400",
+      accentColor: "text-yellow-200",
+      bgPattern: "bg-gradient-to-br from-yellow-900/20 to-amber-900/30",
+    },
+    0.7: {
+      name: "PLATINUM",
+      gradient: "from-indigo-400 via-purple-500 to-pink-500",
+      borderColor: "border-purple-400",
+      accentColor: "text-purple-200",
+      bgPattern: "bg-gradient-to-br from-purple-900/20 to-pink-900/30",
+    },
+    1.0: {
+      name: "DIAMOND",
+      gradient: "from-cyan-400 via-blue-500 to-indigo-600",
+      borderColor: "border-cyan-400",
+      accentColor: "text-cyan-200",
+      bgPattern: "bg-gradient-to-br from-cyan-900/20 to-blue-900/30",
+    }
+  };
+  return designs[ticketCost as keyof typeof designs] || designs[0.1];
+};
 
 export function ScratchCardModal({ 
   isOpen, 
@@ -173,41 +215,75 @@ export function ScratchCardModal({
     onClose();
   };
 
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.classList.add('modal-open');
+    } else {
+      document.body.classList.remove('modal-open');
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      document.body.classList.remove('modal-open');
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
+  const cardDesign = getCardDesign(ticketCost);
+
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-      <div className="bg-gradient-to-br from-dark-purple/95 to-deep-space/95 backdrop-blur-sm rounded-xl border-2 border-neon-gold max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b border-neon-gold/30">
-          <div className="flex items-center space-x-4">
-            <div className="text-2xl font-black text-neon-gold">
-              {formatSOL(ticketCost)} SOL
-            </div>
-            <div className={`px-3 py-1 rounded-full text-xs font-bold ${
-              isDemoMode 
-                ? 'bg-neon-orange/20 text-neon-orange border border-neon-orange/50' 
-                : 'bg-electric-blue/20 text-electric-blue border border-electric-blue/50'
-            }`}>
-              {isDemoMode ? '🟢 DEMO' : '🟣 REAL'}
-            </div>
-          </div>
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-hidden">
+      <div className={`
+        relative max-w-lg w-full max-h-[95vh] overflow-y-auto rounded-2xl
+        bg-gradient-to-br from-dark-purple/95 to-deep-space/95 backdrop-blur-md
+        border-2 ${cardDesign.borderColor} ${cardDesign.bgPattern}
+        shadow-2xl
+      `}>
+        {/* Card Header */}
+        <div className="relative p-6 text-center border-b border-white/10">
           <Button
             onClick={handleCloseModal}
             variant="ghost"
             size="sm"
-            className="text-gray-400 hover:text-white"
+            className="absolute top-4 right-4 text-gray-400 hover:text-white z-10"
           >
             <X className="w-5 h-5" />
           </Button>
+          
+          <div className={`text-xs font-bold ${cardDesign.accentColor} mb-2`}>
+            {cardDesign.name} TIER
+          </div>
+          <img 
+            src={scratchNSolLogo} 
+            alt="Scratch 'n SOL" 
+            className="w-16 h-16 mx-auto mb-2 rounded-lg"
+          />
+          <div className="text-lg font-black text-white mb-2">
+            SCRATCH 'N SOL
+          </div>
+          <div className={`text-2xl font-black ${cardDesign.accentColor} mb-2`}>
+            {formatSOL(ticketCost)} SOL
+          </div>
+          <div className={`px-3 py-1 rounded-full text-xs font-bold inline-block ${
+            isDemoMode 
+              ? 'bg-neon-orange/20 text-neon-orange border border-neon-orange/50' 
+              : 'bg-electric-blue/20 text-electric-blue border border-electric-blue/50'
+          }`}>
+            {isDemoMode ? '🟢 DEMO' : '🟣 REAL'}
+          </div>
         </div>
 
         {/* Game Content */}
-        <div className="p-6">
+        <div className="p-6 relative">
+          {/* Background Pattern */}
+          <div className={`absolute inset-0 bg-gradient-to-br ${cardDesign.gradient} opacity-5`} />
+          <div className="relative z-10">
           {loading ? (
             <div className="text-center py-12">
-              <div className="text-neon-cyan text-lg font-bold mb-4">Initializing Game...</div>
-              <div className="animate-spin w-8 h-8 border-2 border-neon-cyan border-t-transparent rounded-full mx-auto"></div>
+              <div className={`${cardDesign.accentColor} text-lg font-bold mb-4`}>Initializing Game...</div>
+              <div className={`animate-spin w-8 h-8 border-2 border-current border-t-transparent rounded-full mx-auto`}></div>
             </div>
           ) : showResult && gameResult ? (
             /* Result Screen */
@@ -239,13 +315,13 @@ export function ScratchCardModal({
               <div className="flex justify-center space-x-4">
                 <Button 
                   onClick={handlePlayAgain}
-                  className="bg-gradient-to-r from-neon-orange to-neon-gold text-black font-black px-8 py-3 rounded-lg"
+                  className={`bg-gradient-to-r ${cardDesign.gradient} text-black font-black px-8 py-3 rounded-lg hover:shadow-lg transition-all duration-300`}
                 >
                   PLAY AGAIN
                 </Button>
                 <Button 
                   onClick={handleCloseModal}
-                  className="bg-gradient-to-r from-neon-cyan/20 to-electric-blue/20 border-2 border-neon-cyan text-neon-cyan font-bold px-8 py-3 rounded-lg"
+                  className={`bg-gradient-to-r from-gray-600/20 to-gray-700/20 border-2 ${cardDesign.borderColor} ${cardDesign.accentColor} font-bold px-8 py-3 rounded-lg hover:bg-gray-600/30 transition-all duration-300`}
                 >
                   EXIT
                 </Button>
@@ -255,11 +331,11 @@ export function ScratchCardModal({
             /* Scratch Zones */
             <div>
               <div className="text-center mb-8">
-                <h3 className="text-xl font-bold text-neon-cyan mb-2">Scratch Each Zone</h3>
+                <h3 className={`text-xl font-bold ${cardDesign.accentColor} mb-2`}>Scratch Each Zone</h3>
                 <p className="text-gray-300 text-sm">
                   Scratch all 3 zones to reveal symbols. Match all 3 to win!
                 </p>
-                <div className="text-neon-gold text-xs mt-2">
+                <div className={`${cardDesign.accentColor} text-xs mt-2`}>
                   Max Win: {formatSOL(ticketCost * 10)} SOL • Multipliers: 1x, 2x, 5x, 10x
                 </div>
               </div>
@@ -287,13 +363,14 @@ export function ScratchCardModal({
                   Zones completed: {revealedZones.filter(r => r).length}/3
                 </p>
                 {revealedZones.filter(r => r).length === 3 && (
-                  <p className="text-neon-cyan text-sm animate-pulse mt-2">
+                  <p className={`${cardDesign.accentColor} text-sm animate-pulse mt-2`}>
                     Checking results...
                   </p>
                 )}
               </div>
             </div>
           ) : null}
+          </div>
         </div>
       </div>
     </div>
