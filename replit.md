@@ -101,6 +101,14 @@ The application uses PostgreSQL with Drizzle ORM for data persistence:
   - Always display scratch cards regardless of wallet connection status
   - Demo mode allows immediate play without wallet requirements
 
+- **January 28, 2025**: Fixed Solana wallet integration issues
+  - Resolved "Invalid public key input" errors with proper validation
+  - Added wallet balance fetching and display in header when connected
+  - Implemented proper error handling for insufficient balance and invalid addresses
+  - Fixed React hook conflicts by using full wallet context
+  - Added environment variable validation for wallet addresses
+  - Wallet now shows balance, address, and transaction status properly
+
 ## Deployment Strategy
 
 ### Environment Configuration
