@@ -13,28 +13,28 @@ export function WalletButton() {
 
   // Fetch wallet balance when connected
   useEffect(() => {
-    if (connected && publicKey) {
-      fetchBalance();
-    } else {
-      setBalance(null);
-    }
-  }, [connected, publicKey, connection]);
+    const fetchBalance = async () => {
+      if (connected && publicKey) {
+        setLoading(true);
+        try {
+          // Use confirmed commitment for reliable balance fetching
+          const balanceLamports = await connection.getBalance(publicKey, 'confirmed');
+          const solBalance = balanceLamports / LAMPORTS_PER_SOL;
+          setBalance(solBalance);
+        } catch (error) {
+          console.error('Failed to fetch wallet balance:', error);
+          setBalance(null);
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        setBalance(null);
+        setLoading(false);
+      }
+    };
 
-  const fetchBalance = async () => {
-    if (!publicKey) return;
-    
-    try {
-      setLoading(true);
-      const lamports = await connection.getBalance(publicKey);
-      const solBalance = lamports / LAMPORTS_PER_SOL;
-      setBalance(solBalance);
-    } catch (error) {
-      console.error('Error fetching balance:', error);
-      setBalance(null);
-    } finally {
-      setLoading(false);
-    }
-  };
+    fetchBalance();
+  }, [connected, publicKey, connection]);
 
   if (!connected) {
     return (

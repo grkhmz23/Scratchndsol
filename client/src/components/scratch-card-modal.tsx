@@ -168,15 +168,18 @@ export function ScratchCardModal({
           purchaseSignature = transactionResult.signature || '';
           
           toast({
-            title: "Payment Confirmed",
-            description: `Paid ${formatSOL(ticketCost)} SOL. Starting game...`,
+            title: "🎉 Payment Confirmed!",
+            description: `Successfully paid ${formatSOL(ticketCost)} SOL. Game starting...`,
             className: "bg-green-600/20 border-green-600/50",
           });
         } catch (error) {
           console.error('Transaction failed:', error);
+          const errorMsg = error instanceof Error ? error.message : "Transaction failed";
           toast({
-            title: "Payment Failed",
-            description: error instanceof Error ? error.message : "Transaction failed",
+            title: "💳 Payment Failed",
+            description: errorMsg.includes('insufficient') ? 
+              "Insufficient SOL balance. Please add funds to your wallet." : 
+              errorMsg,
             variant: "destructive",
           });
           onClose();
@@ -375,10 +378,18 @@ export function ScratchCardModal({
           {/* Background Pattern */}
           <div className={`absolute inset-0 bg-gradient-to-br ${cardDesign.gradient} opacity-5 rounded-b-3xl`} />
           <div className="relative z-10">
-          {loading ? (
+          {(loading || transactionPending) ? (
             <div className="text-center py-12">
-              <div className={`${cardDesign.accentColor} text-lg font-bold mb-4`}>Initializing Game...</div>
-              <div className={`animate-spin w-8 h-8 border-2 border-current border-t-transparent rounded-full mx-auto`}></div>
+              <div className={`${cardDesign.accentColor} text-lg font-bold mb-4`}>
+                {transactionPending ? "Processing Payment..." : "Initializing Game..."}
+              </div>
+              <div className={`animate-spin w-8 h-8 border-2 border-current border-t-transparent rounded-full mx-auto mb-4`}></div>
+              <div className="text-sm text-gray-400">
+                {transactionPending ? 
+                  "Please confirm the transaction in your wallet" :
+                  "Setting up your scratch card..."
+                }
+              </div>
             </div>
           ) : showResult && gameResult ? (
             /* Result Screen */

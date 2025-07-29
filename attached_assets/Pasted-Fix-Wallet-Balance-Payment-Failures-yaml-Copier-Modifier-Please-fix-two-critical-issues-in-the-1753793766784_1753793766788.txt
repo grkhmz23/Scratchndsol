@@ -1,0 +1,74 @@
+Fix Wallet Balance & Payment Failures
+yaml
+Copier
+Modifier
+Please fix two critical issues in the project:
+
+---
+
+### ❌ 1. Wallet Balance Not Showing
+
+✅ Fix Instructions:
+- Ensure `wallet.publicKey` is properly checked before fetching the balance
+- Use Solana mainnet connection:
+```js
+const connection = new Connection("https://api.mainnet-beta.solana.com", "confirmed");
+Fetch balance like this:
+
+js
+Copier
+Modifier
+useEffect(() => {
+  const fetchBalance = async () => {
+    if (wallet.connected && wallet.publicKey) {
+      const balanceLamports = await connection.getBalance(wallet.publicKey);
+      setUserBalance(balanceLamports / LAMPORTS_PER_SOL);
+    }
+  };
+  fetchBalance();
+}, [wallet.publicKey, wallet.connected]);
+Display balance once fetched:
+
+jsx
+Copier
+Modifier
+{wallet.connected && userBalance !== null && (
+  <span>{userBalance.toFixed(3)} SOL</span>
+)}
+❌ 2. Payment Fails When Buying a Card (Real Mode)
+✅ Fix Instructions:
+
+Make sure the transaction is built correctly with proper signers and destinations:
+
+js
+Copier
+Modifier
+import { Transaction, SystemProgram, sendAndConfirmTransaction } from '@solana/web3.js';
+
+const transaction = new Transaction().add(
+  SystemProgram.transfer({
+    fromPubkey: wallet.publicKey,
+    toPubkey: new PublicKey(REACT_APP_POOL_WALLET),
+    lamports: Math.floor(cardPrice * 0.9 * LAMPORTS_PER_SOL),
+  }),
+  SystemProgram.transfer({
+    fromPubkey: wallet.publicKey,
+    toPubkey: new PublicKey(REACT_APP_TEAM_WALLET),
+    lamports: Math.floor(cardPrice * 0.1 * LAMPORTS_PER_SOL),
+  })
+);
+
+// Send transaction using wallet adapter
+await wallet.sendTransaction(transaction, connection);
+Show loading state during transaction, then show success or error message
+
+✅ Also ensure:
+
+wallet.sendTransaction() is used properly from @solana/wallet-adapter-react
+
+The wallet is fully connected before sending
+
+Proper error messages are shown on failure (e.g., not enough SOL)
+
+🔐 Reminder:
+Do not expose any private keys in frontend code

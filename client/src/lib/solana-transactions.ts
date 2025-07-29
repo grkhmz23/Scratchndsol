@@ -94,15 +94,17 @@ export async function purchaseTicket({
     );
 
     // Get recent blockhash
-    const { blockhash } = await connection.getLatestBlockhash();
+    const { blockhash } = await connection.getLatestBlockhash('confirmed');
     transaction.recentBlockhash = blockhash;
     transaction.feePayer = wallet.publicKey;
 
-    // Sign and send transaction
-    const signedTransaction = await wallet.signTransaction(transaction);
-    const signature = await connection.sendRawTransaction(signedTransaction.serialize());
+    // Send transaction using wallet adapter (handles signing automatically)
+    const signature = await wallet.sendTransaction(transaction, connection, {
+      skipPreflight: false,
+      preflightCommitment: 'confirmed',
+    });
     
-    // Wait for confirmation
+    // Wait for confirmation with proper commitment level
     await connection.confirmTransaction(signature, 'confirmed');
 
     return { success: true, signature };

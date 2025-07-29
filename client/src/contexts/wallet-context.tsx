@@ -13,12 +13,12 @@ interface WalletContextProviderProps {
 }
 
 export function WalletContextProvider({ children }: WalletContextProviderProps) {
-  // Use mainnet for production
+  // Use mainnet for production with proper RPC endpoint
   const network = WalletAdapterNetwork.Mainnet;
   
-  // Use custom RPC or default mainnet endpoint
+  // Use mainnet RPC endpoint for reliable connection
   const endpoint = useMemo(() => 
-    import.meta.env.VITE_SOLANA_RPC_URL || clusterApiUrl(network),
+    import.meta.env.VITE_SOLANA_RPC_URL || "https://api.mainnet-beta.solana.com",
     [network]
   );
   
