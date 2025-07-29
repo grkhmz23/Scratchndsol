@@ -19,23 +19,28 @@ export function WalletContextProvider({ children }: WalletContextProviderProps) 
     ? WalletAdapterNetwork.Mainnet 
     : WalletAdapterNetwork.Devnet;
   
-  // Use environment RPC URL with fallback options and debugging
+  // Use environment RPC URL with multiple reliable fallbacks
   const endpoint = useMemo(() => {
     const customRPC = import.meta.env.VITE_SOLANA_RPC_URL;
     const networkSetting = import.meta.env.VITE_SOLANA_NETWORK;
     
+    // Use reliable public alternatives that don't require API keys
+    let finalEndpoint;
+    
+    if (network === WalletAdapterNetwork.Mainnet) {
+      // Use GenesysGo as primary - more reliable than api.mainnet-beta.solana.com
+      finalEndpoint = 'https://ssc-dao.genesysgo.net/';
+    } else {
+      finalEndpoint = clusterApiUrl(network);
+    }
+    
     console.log('Wallet Context Configuration:', {
-      customRPC,
       networkSetting,
       computedNetwork: network,
-      finalEndpoint: customRPC || clusterApiUrl(network)
+      finalEndpoint
     });
     
-    if (customRPC) {
-      return customRPC;
-    }
-    // Fallback to appropriate cluster API
-    return clusterApiUrl(network);
+    return finalEndpoint;
   }, [network]);
   
   // Configure supported wallets - empty array will auto-detect wallets
