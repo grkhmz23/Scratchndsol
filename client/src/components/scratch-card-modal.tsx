@@ -234,23 +234,26 @@ export function ScratchCardModal({
   const cardDesign = getCardDesign(ticketCost);
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-hidden">
+    <div className="fixed inset-0 bg-gradient-to-br from-deep-space via-dark-purple/50 to-deep-space flex items-center justify-center z-50 overflow-hidden">
+      {/* Floating scratch card - centered and responsive */}
       <div className={`
-        relative max-w-lg w-full max-h-[95vh] overflow-y-auto rounded-2xl
-        bg-gradient-to-br from-dark-purple/95 to-deep-space/95 backdrop-blur-md
+        relative w-full max-w-md sm:max-w-lg lg:max-w-xl
+        mx-auto my-8 rounded-3xl transform transition-all duration-300
+        bg-gradient-to-br from-dark-purple/98 to-deep-space/98 backdrop-blur-lg
         border-2 ${cardDesign.borderColor} ${cardDesign.bgPattern}
-        shadow-2xl
+        shadow-2xl shadow-black/50 hover:shadow-neon-cyan/20
+        scale-95 sm:scale-100
       `}>
+        {/* Close Button - Top Right */}
+        <button
+          onClick={handleCloseModal}
+          className="absolute -top-3 -right-3 z-20 w-10 h-10 bg-red-600/90 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-all duration-200 shadow-lg border-2 border-red-500/30 backdrop-blur-sm"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
         {/* Card Header */}
         <div className="relative p-6 text-center border-b border-white/10">
-          <Button
-            onClick={handleCloseModal}
-            variant="ghost"
-            size="sm"
-            className="absolute top-4 right-4 text-gray-400 hover:text-white z-10"
-          >
-            <X className="w-5 h-5" />
-          </Button>
           
           <div className={`text-xs font-bold ${cardDesign.accentColor} mb-2`}>
             {cardDesign.name} TIER
@@ -276,9 +279,9 @@ export function ScratchCardModal({
         </div>
 
         {/* Game Content */}
-        <div className="p-6 relative">
+        <div className="p-4 sm:p-6 relative">
           {/* Background Pattern */}
-          <div className={`absolute inset-0 bg-gradient-to-br ${cardDesign.gradient} opacity-5`} />
+          <div className={`absolute inset-0 bg-gradient-to-br ${cardDesign.gradient} opacity-5 rounded-b-3xl`} />
           <div className="relative z-10">
           {loading ? (
             <div className="text-center py-12">
@@ -330,24 +333,24 @@ export function ScratchCardModal({
           ) : gameSymbols.length > 0 ? (
             /* Scratch Zones */
             <div>
-              <div className="text-center mb-8">
-                <h3 className={`text-xl font-bold ${cardDesign.accentColor} mb-2`}>Scratch Each Zone</h3>
+              <div className="text-center mb-6">
+                <h3 className={`text-lg sm:text-xl font-bold ${cardDesign.accentColor} mb-2`}>Scratch Each Zone</h3>
                 <p className="text-gray-300 text-sm">
                   Scratch all 3 zones to reveal symbols. Match all 3 to win!
                 </p>
                 <div className={`${cardDesign.accentColor} text-xs mt-2`}>
-                  Max Win: {formatSOL(ticketCost * 10)} SOL • Multipliers: 1x, 2x, 5x, 10x
+                  Max Win: {formatSOL(ticketCost * 10)} SOL • Multipliers: 1x-10x
                 </div>
               </div>
 
-              {/* Scratch Zones Grid */}
-              <div className="grid grid-cols-3 gap-4 mb-8">
+              {/* Scratch Zones Grid - Responsive */}
+              <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6 max-w-sm mx-auto">
                 {[0, 1, 2].map((index) => (
                   <div key={index} className="flex flex-col items-center">
                     <ScratchZone
-                      width={120}
-                      height={100}
-                      scratchRadius={20}
+                      width={100}
+                      height={90}
+                      scratchRadius={18}
                       symbol={gameSymbols[index] || ''}
                       onComplete={() => handleZoneComplete(index)}
                       isRevealed={revealedZones[index]}

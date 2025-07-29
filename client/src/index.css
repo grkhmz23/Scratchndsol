@@ -174,6 +174,8 @@
 .modal-open {
   overflow: hidden;
   height: 100vh;
+  position: fixed;
+  width: 100%;
 }
 
 /* Better mobile touch handling for scratch zones */
@@ -182,4 +184,15 @@
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
+}
+
+/* Mobile-first responsive modal */
+@media (max-width: 640px) {
+  .modal-open {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+  }
 }
