@@ -30,8 +30,8 @@ export async function purchaseTicket({
   teamWallet
 }: PurchaseTicketParams): Promise<TransactionResult> {
   try {
-    if (!wallet.publicKey || !wallet.signTransaction) {
-      return { success: false, error: 'Wallet not connected' };
+    if (!wallet.publicKey || !wallet.sendTransaction) {
+      return { success: false, error: 'Wallet not connected or does not support transactions' };
     }
 
     // Convert SOL to lamports
@@ -64,9 +64,13 @@ export async function purchaseTicket({
       return { success: false, error: 'Invalid team wallet address' };
     }
 
-    // Check user balance before proceeding
+    // Check user balance before proceeding with better fee estimation
     const userBalance = await connection.getBalance(wallet.publicKey);
-    const requiredLamports = totalLamports + 5000; // Add estimated transaction fee
+    
+    // Get current fee estimate (more accurate than hardcoded 5000)
+    const { feeCalculator } = await connection.getRecentBlockhash();
+    const estimatedFee = feeCalculator ? feeCalculator.lamportsPerSignature * 2 : 10000; // 2 transfers = 2 signatures
+    const requiredLamports = totalLamports + estimatedFee;
     
     if (userBalance < requiredLamports) {
       return { 
@@ -98,14 +102,23 @@ export async function purchaseTicket({
     transaction.recentBlockhash = blockhash;
     transaction.feePayer = wallet.publicKey;
 
-    // Send transaction using wallet adapter (handles signing automatically)
+    // Send transaction using wallet adapter with proper error handling
     const signature = await wallet.sendTransaction(transaction, connection, {
       skipPreflight: false,
       preflightCommitment: 'confirmed',
+      maxRetries: 3,
     });
     
-    // Wait for confirmation with proper commitment level
-    await connection.confirmTransaction(signature, 'confirmed');
+    // Wait for confirmation with timeout and proper error handling
+    const confirmation = await connection.confirmTransaction({
+      signature,
+      blockhash,
+      lastValidBlockHeight: (await connection.getLatestBlockhash()).lastValidBlockHeight,
+    }, 'confirmed');
+    
+    if (confirmation.value.err) {
+      throw new Error(`Transaction failed: ${confirmation.value.err.toString()}`);
+    }
 
     return { success: true, signature };
 

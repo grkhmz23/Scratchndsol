@@ -131,7 +131,7 @@ export function ScratchCardModal({
       
       if (!isDemoMode) {
         // Handle real mode - require wallet connection and process payment
-        if (!wallet.connected || !wallet.publicKey || !wallet.signTransaction) {
+        if (!wallet.connected || !wallet.publicKey || !wallet.sendTransaction) {
           setVisible(true); // Open wallet modal
           toast({
             title: "Wallet Required",
@@ -175,11 +175,21 @@ export function ScratchCardModal({
         } catch (error) {
           console.error('Transaction failed:', error);
           const errorMsg = error instanceof Error ? error.message : "Transaction failed";
+          
+          let userFriendlyMsg = errorMsg;
+          if (errorMsg.includes('insufficient')) {
+            userFriendlyMsg = "Insufficient SOL balance. Please add funds to your wallet.";
+          } else if (errorMsg.includes('User rejected')) {
+            userFriendlyMsg = "Transaction was cancelled. Please try again.";
+          } else if (errorMsg.includes('Network')) {
+            userFriendlyMsg = "Network connection issue. Please check your internet and try again.";
+          } else if (errorMsg.includes('Invalid')) {
+            userFriendlyMsg = "Wallet configuration error. Please contact support.";
+          }
+          
           toast({
-            title: "💳 Payment Failed",
-            description: errorMsg.includes('insufficient') ? 
-              "Insufficient SOL balance. Please add funds to your wallet." : 
-              errorMsg,
+            title: "Payment Failed",
+            description: userFriendlyMsg,
             variant: "destructive",
           });
           onClose();

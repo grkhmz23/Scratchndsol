@@ -11,9 +11,9 @@ export function WalletButton() {
   const [balance, setBalance] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Fetch wallet balance when connected
+  // Fetch wallet balance when connected with retry logic
   useEffect(() => {
-    const fetchBalance = async () => {
+    const fetchBalance = async (retryCount = 0) => {
       if (connected && publicKey) {
         setLoading(true);
         try {
@@ -22,10 +22,20 @@ export function WalletButton() {
           const solBalance = balanceLamports / LAMPORTS_PER_SOL;
           setBalance(solBalance);
         } catch (error) {
-          console.error('Failed to fetch wallet balance:', error);
-          setBalance(null);
+          console.error(`Failed to fetch wallet balance (attempt ${retryCount + 1}):`, error);
+          
+          // Retry up to 3 times with exponential backoff
+          if (retryCount < 2) {
+            setTimeout(() => {
+              fetchBalance(retryCount + 1);
+            }, Math.pow(2, retryCount) * 1000);
+          } else {
+            setBalance(null);
+          }
         } finally {
-          setLoading(false);
+          if (retryCount === 0) {
+            setLoading(false);
+          }
         }
       } else {
         setBalance(null);

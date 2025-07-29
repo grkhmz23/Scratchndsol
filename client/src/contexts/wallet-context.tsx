@@ -13,14 +13,20 @@ interface WalletContextProviderProps {
 }
 
 export function WalletContextProvider({ children }: WalletContextProviderProps) {
-  // Use mainnet for production with proper RPC endpoint
-  const network = WalletAdapterNetwork.Mainnet;
+  // Use environment variable for network selection with proper fallback
+  const network = import.meta.env.VITE_SOLANA_NETWORK === 'mainnet' 
+    ? WalletAdapterNetwork.Mainnet 
+    : WalletAdapterNetwork.Devnet;
   
-  // Use mainnet RPC endpoint for reliable connection
-  const endpoint = useMemo(() => 
-    import.meta.env.VITE_SOLANA_RPC_URL || "https://api.mainnet-beta.solana.com",
-    [network]
-  );
+  // Use environment RPC URL with fallback options
+  const endpoint = useMemo(() => {
+    const customRPC = import.meta.env.VITE_SOLANA_RPC_URL;
+    if (customRPC) {
+      return customRPC;
+    }
+    // Fallback to appropriate cluster API
+    return clusterApiUrl(network);
+  }, [network]);
   
   // Configure supported wallets - empty array will auto-detect wallets
   const wallets = useMemo(() => [], []);
