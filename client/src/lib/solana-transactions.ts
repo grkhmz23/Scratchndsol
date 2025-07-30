@@ -125,9 +125,12 @@ export async function purchaseTicket({
 
     // Get recent blockhash using proxy RPC
     console.log('🔍 INVESTIGATION: Setting transaction blockhash...');
-    const { blockhash } = blockhashInfo;
+    console.log('🔍 Raw blockhash info:', blockhashInfo);
+    
+    // Extract blockhash from the correct structure (result.value.blockhash)
+    const blockhash = blockhashInfo?.value?.blockhash;
     if (!blockhash) {
-      throw new Error('No blockhash received from proxy RPC');
+      throw new Error(`No blockhash received from proxy RPC. Received: ${JSON.stringify(blockhashInfo)}`);
     }
     transaction.recentBlockhash = blockhash;
     transaction.feePayer = wallet.publicKey;
@@ -161,9 +164,9 @@ export async function purchaseTicket({
     }
     
     const confirmation = await connection.confirmTransaction({
-      signature,
+      signature,  
       blockhash,
-      lastValidBlockHeight,
+      lastValidBlockHeight: blockhashInfo?.value?.lastValidBlockHeight || lastValidBlockHeight,
     }, 'confirmed');
     
     if (confirmation.value.err) {
