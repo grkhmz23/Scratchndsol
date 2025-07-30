@@ -5,6 +5,7 @@ import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { useState, useEffect } from 'react';
 import { formatSOL } from '@/lib/utils';
 import { testWalletConnection } from '@/lib/wallet-diagnostics';
+import { ProfileDropdown } from '@/components/profile-dropdown';
 
 export function WalletButton() {
   const { publicKey, connected } = useWallet();
@@ -74,18 +75,5 @@ export function WalletButton() {
     );
   }
 
-  return (
-    <div className="flex items-center space-x-3">
-      {/* Balance Display */}
-      <div className="text-right">
-        <div className="text-xs text-gray-400">Balance</div>
-        <div className="text-sm font-bold text-neon-cyan">
-          {loading ? '...' : balance !== null ? `${formatSOL(balance)} SOL` : 'Error'}
-        </div>
-      </div>
-      
-      {/* Wallet Button */}
-      <WalletMultiButton className="!bg-neon-orange !text-black !font-bold !px-4 !py-2 !rounded-lg hover:!bg-neon-orange/80 !transition-colors" />
-    </div>
-  );
+  return <ProfileDropdown balance={balance} loading={loading} />;
 }

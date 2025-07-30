@@ -7,11 +7,13 @@ import { WalletContextProvider } from "@/contexts/wallet-context";
 import { GameModeProvider } from "@/contexts/game-mode-context";
 import Home from "@/pages/home";
 import NotFound from "@/pages/not-found";
+import Dashboard from "@/pages/dashboard";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/dashboard" component={Dashboard} />
       <Route component={NotFound} />
     </Switch>
   );

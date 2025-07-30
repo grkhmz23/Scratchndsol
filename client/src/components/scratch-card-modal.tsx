@@ -10,6 +10,7 @@ import { X } from 'lucide-react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { purchaseTicket } from '@/lib/solana-transactions';
+import { getUserStatsManager } from '@/lib/user-stats';
 import scratchNSolLogo from '@assets/ChatGPT Image 28 juil. 2025, 10_17_36_1753690663892.png';
 
 interface ScratchCardModalProps {
@@ -263,6 +264,30 @@ export function ScratchCardModal({
     };
 
     setGameResult(gameResult);
+    
+    // Track user stats for Real Mode only
+    if (!isDemoMode && wallet.publicKey) {
+      const statsManager = getUserStatsManager(wallet.publicKey);
+      if (statsManager) {
+        // Map ticket cost to card type
+        const cardTypeMap: Record<number, string> = {
+          0.1: 'starter',
+          0.25: 'bronze', 
+          0.5: 'silver',
+          0.75: 'gold',
+          1.0: 'platinum'
+        };
+        
+        statsManager.recordGamePlay({
+          cardType: cardTypeMap[ticketCost] || 'starter',
+          solAmount: ticketCost,
+          isWin: result.isWin,
+          prizeAmount: winAmount,
+          symbols: gameSymbols,
+          multiplier: result.multiplier
+        });
+      }
+    }
     
     // Update the game with final results
     const currentWalletAddress = isDemoMode ? walletAddress : (wallet.publicKey?.toString() || walletAddress);
