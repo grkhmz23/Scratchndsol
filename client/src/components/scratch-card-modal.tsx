@@ -294,12 +294,20 @@ export function ScratchCardModal({
     
     // Handle payout if won
     if (result.isWin && !isDemoMode && wallet.publicKey) {
+      console.log('🏆 WINNER! Attempting payout...');
+      console.log(`🏆 Win amount: ${winAmount} SOL`);
+      console.log(`🏆 Player wallet: ${wallet.publicKey.toString()}`);
+      console.log(`🏆 Ticket cost: ${ticketCost} SOL`);
+      console.log(`🏆 Multiplier: ${result.multiplier}x`);
+      
       try {
-        await payoutMutation.mutateAsync({
-          gameId: 'current_game_id', // This would need to come from game creation
-          winnerPublicKey: wallet.publicKey.toString(),
-          winAmount: winAmount,
+        const payoutResult = await payoutMutation.mutateAsync({
+          playerWallet: wallet.publicKey.toString(),
+          winAmount: winAmount.toString(),
+          ticketCost: ticketCost.toString()
         });
+        
+        console.log('✅ Payout successful:', payoutResult);
         
         toast({
           title: "🎉 You Won!",
@@ -307,10 +315,20 @@ export function ScratchCardModal({
           className: "bg-green-600/20 border-green-600/50",
         });
       } catch (error) {
-        console.error('Payout failed:', error);
+        console.error('❌ Payout failed:', error);
+        
+        let errorMsg = "Win recorded but payout failed.";
+        if (error instanceof Error) {
+          if (error.message.includes('Insufficient pool balance')) {
+            errorMsg = "Pool wallet has insufficient funds for payout. Please contact support.";
+          } else if (error.message.includes('Payout transaction failed')) {
+            errorMsg = "Blockchain transaction failed. Your win is recorded - contact support.";
+          }
+        }
+        
         toast({
           title: "Payout Error",
-          description: "Win recorded but payout failed. Contact support.",
+          description: errorMsg,
           variant: "destructive",
         });
       }

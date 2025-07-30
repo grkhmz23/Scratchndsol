@@ -56,10 +56,21 @@ export class SolanaService {
       const playerPublicKey = new PublicKey(playerWallet);
       const lamports = Math.round(amountSol * LAMPORTS_PER_SOL);
 
-      // Check pool wallet balance
+      // Check pool wallet balance with detailed logging
       const poolBalance = await this.connection.getBalance(this.poolWallet.publicKey);
-      if (poolBalance < lamports + 5000) { // 5000 lamports for transaction fee
-        console.error('Insufficient pool balance for payout');
+      const poolBalanceSOL = poolBalance / LAMPORTS_PER_SOL;
+      const requiredLamports = lamports + 5000; // 5000 lamports for transaction fee
+      const requiredSOL = requiredLamports / LAMPORTS_PER_SOL;
+      
+      console.log('💰 PAYOUT INVESTIGATION:');
+      console.log(`💰 Pool wallet address: ${this.poolWallet.publicKey.toString()}`);
+      console.log(`💰 Pool balance: ${poolBalanceSOL} SOL (${poolBalance} lamports)`);
+      console.log(`💰 Payout amount: ${amountSol} SOL (${lamports} lamports)`);
+      console.log(`💰 Required total: ${requiredSOL} SOL (${requiredLamports} lamports)`);
+      console.log(`💰 Sufficient balance: ${poolBalance >= requiredLamports ? 'YES' : 'NO'}`);
+      
+      if (poolBalance < requiredLamports) {
+        console.error(`❌ INSUFFICIENT POOL BALANCE: Need ${requiredSOL} SOL, have ${poolBalanceSOL} SOL`);
         return null;
       }
 
