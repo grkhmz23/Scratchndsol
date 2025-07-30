@@ -42,11 +42,30 @@ export class ProxyRPCService {
 
   async getBalance(publicKey: PublicKey): Promise<number> {
     try {
-      const balance = await this.makeRPCCall('getBalance', [
+      console.log('🔍 PROXY RPC: Getting balance for', publicKey.toString());
+      const response = await this.makeRPCCall('getBalance', [
         publicKey.toString(),
         { commitment: 'confirmed' }
       ]);
-      return balance / LAMPORTS_PER_SOL;
+      console.log('🔍 PROXY RPC: Raw balance response:', response);
+      
+      // Handle different response structures from getBalance
+      let balanceLamports;
+      if (typeof response === 'object' && response !== null) {
+        if (response.value !== undefined) {
+          balanceLamports = response.value; // Direct value response
+        } else if (response.result && response.result.value !== undefined) {
+          balanceLamports = response.result.value; // Nested result.value response
+        } else {
+          balanceLamports = response; // Fallback to raw response
+        }
+      } else {
+        balanceLamports = response; // Raw number response
+      }
+      
+      const balanceSOL = balanceLamports / LAMPORTS_PER_SOL;
+      console.log('🔍 PROXY RPC: Converted balance:', balanceSOL, 'SOL');
+      return balanceSOL;
     } catch (error) {
       console.error('Failed to get balance via proxy:', error);
       throw error;

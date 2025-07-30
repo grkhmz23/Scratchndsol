@@ -50,10 +50,15 @@ export async function purchaseTicket({
       return { success: false, error: 'Wallet not connected or does not support transactions' };
     }
 
-    // Convert SOL to lamports
-    const totalLamports = Math.floor(ticketCost * LAMPORTS_PER_SOL);
-    const poolAmount = Math.floor(totalLamports * 0.9); // 90% to pool
-    const teamAmount = totalLamports - poolAmount; // 10% to team
+    // Convert SOL to lamports - user pays exactly the ticket cost
+    const ticketLamports = Math.floor(ticketCost * LAMPORTS_PER_SOL);
+    const poolAmount = Math.floor(ticketLamports * 0.9); // 90% of ticket cost to pool
+    const teamAmount = Math.floor(ticketLamports * 0.1); // 10% of ticket cost to team
+    
+    console.log('💰 PAYMENT BREAKDOWN:');
+    console.log(`💰 Ticket cost: ${ticketCost} SOL (${ticketLamports} lamports)`);
+    console.log(`💰 Pool gets: ${poolAmount / LAMPORTS_PER_SOL} SOL (${poolAmount} lamports)`);
+    console.log(`💰 Team gets: ${teamAmount / LAMPORTS_PER_SOL} SOL (${teamAmount} lamports)`);
 
     // Create transaction
     const transaction = new Transaction();
@@ -84,6 +89,9 @@ export async function purchaseTicket({
     const userBalanceSOL = await proxyRPC.getBalance(wallet.publicKey);
     const userBalance = Math.floor(userBalanceSOL * LAMPORTS_PER_SOL);
     
+    console.log('💰 BALANCE CHECK:');
+    console.log(`💰 User balance: ${userBalanceSOL} SOL (${userBalance} lamports)`);
+    
     // Get current fee estimate using proxy RPC
     console.log('🔍 INVESTIGATION: Fetching blockhash via proxy RPC...');
     let blockhashInfo;
@@ -96,7 +104,7 @@ export async function purchaseTicket({
     }
     
     const estimatedFee = 10000; // Conservative estimate for 2 transfers
-    const requiredLamports = totalLamports + estimatedFee;
+    const requiredLamports = ticketLamports + estimatedFee; // User only needs ticket cost + fees
     
     if (userBalance < requiredLamports) {
       return { 
