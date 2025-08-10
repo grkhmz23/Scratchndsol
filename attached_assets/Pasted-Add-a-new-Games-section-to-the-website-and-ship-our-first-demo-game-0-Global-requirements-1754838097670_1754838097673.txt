@@ -1,0 +1,60 @@
+Add a new **Games** section to the website and ship our first demo game.
+
+### 0) Global requirements
+- Tech: React + Tailwind + (Phaser.js preferred) OR HTML5 Canvas for the game.
+- Create a top-nav link "Games" that routes to /games.
+- On /games show a grid of game cards. For now include ONE card:
+  - Title: "NoCrying Escape (Demo)"
+  - Tag: "Demo only — SOL prizes coming soon"
+  - CTA button: "Play Demo"
+- Add a persistent banner on /games and in the game view:
+  **"Demo Mode Only — No wallet or payouts yet. Real Mode coming soon."**
+
+### 1) Asset generation (use Replit's image generation tool)
+Generate simple, cohesive placeholder assets in a retro/casino vibe:
+- Character sprite (PNG, ~64x64, transparent background): a tiny runner with “NoCrying” headband.
+- Background (PNG, 1280x720): purple/teal gradient with subtle neon grid.
+- Obstacles (three 64x64 PNGs): a “RUG” bundle, a teardrop emoji-style icon, and a broken coin.
+- UI badges/icons: “DEMO” ribbon, “Tap to jump” hint, start/retry buttons.
+Save assets under `/public/assets/nocrying-escape/` and reference them in the game.
+
+### 2) Game: NoCrying Escape (Runner Game) — DEMO ONLY
+- Framework: Phaser.js (preferred). If not, use plain Canvas with requestAnimationFrame.
+- Gameplay:
+  - Side-scrolling infinite runner. Character auto-runs; player taps/clicks/presses SPACE to jump.
+  - Gravity + jump physics. Single jump is enough (no double jump).
+  - Randomly spawn obstacles from right to left at increasing speed.
+  - Colliding with an obstacle ends the run.
+- UI/Flow:
+  - Landing screen with character preview, big “Play Demo” button, and “Tap/Space to jump” hint.
+  - During run: show timer (seconds survived).
+  - Game over screen: “You survived Xs” + buttons {Retry, Back to Games}.
+- Difficulty:
+  - Start slow; speed ramps up every 10 seconds.
+- Mobile friendly: support touch controls for jump.
+
+### 3) Pages & routing
+- New route: `/games`
+- New route: `/games/nocrying-escape` (game fullscreen view with a minimal header and the DEMO banner).
+
+### 4) Code organization
+- `src/pages/Games.tsx` — list of games.
+- `src/pages/games/NoCryingEscape.tsx` — game wrapper component.
+- `src/game/nocrying-escape/` — Phaser scene(s), config, asset imports.
+- `public/assets/nocrying-escape/` — generated images.
+
+### 5) Demo-only guard (for future Real Mode)
+- Add a small `GameModeBadge` component that shows: DEMO ONLY (no wallet required).
+- Prepare a boolean flag `IS_REAL_MODE = false` (env or config). If false, hide any wallet UI and payout logic.
+
+### 6) Visual polish
+- Neon/pixel casino theme matching our brand.
+- Add a subtle parallax effect on background layers if possible.
+- Use Tailwind to style the /games cards with hover states.
+
+### 7) Acceptance criteria
+- /games loads with a visible DEMO banner and one card for NoCrying Escape.
+- Clicking “Play Demo” opens `/games/nocrying-escape` with a fullscreen runner.
+- Character runs, jumps, obstacles spawn, timer increases, collision shows Game Over with retry.
+- All assets are generated via Replit’s image tool and stored locally.
+- No wallet calls or payouts are present (demo only).
