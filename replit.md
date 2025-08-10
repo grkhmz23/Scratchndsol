@@ -42,16 +42,26 @@ The application uses PostgreSQL with Drizzle ORM for data persistence:
 - **Transaction Signing**: Real wallet transactions for purchasing scratch cards
 
 ### Game Logic
-- **Ticket Types**: 5 different scratch card tiers (0.1 to 1.0 SOL) with corresponding max wins
+- **Scratch Cards**: 5 different tiers (0.1 to 1.0 SOL) with corresponding max wins
+- **Arcade Games**: Phaser.js-powered games with demo-only mode currently
 - **Random Generation**: Client-side symbol generation with win/loss determination
 - **Multipliers**: Random multipliers (1x, 2x, 5x, 10x) for winning games
 - **Payment Split**: 10% to team wallet, 90% to prize pool
+
+### Games Architecture
+- **NoCrying Escape**: Infinite runner built with Phaser.js and TypeScript
+- **Custom Assets**: SVG-based sprites for character, obstacles, and backgrounds  
+- **Demo Mode**: Full gameplay without wallet integration or payouts
+- **Score Persistence**: localStorage-based best score tracking
+- **Mobile Support**: Touch and keyboard controls (SPACE/click to jump)
+- **Progressive Difficulty**: Speed increases every 10 seconds
 
 ### UI/UX Design
 - **Theme**: Neon cyberpunk aesthetic with custom CSS variables
 - **Responsive**: Mobile-first design with Tailwind CSS
 - **Components**: Reusable UI components from shadcn/ui library
 - **Scratch Interaction**: HTML5 Canvas-based real scratch mechanics requiring 60% completion
+- **Game Navigation**: Header navigation between Scratch Cards and Games sections
 - **Mode Toggle**: Visual indicators for Demo (🟢) vs Real (🟣) modes
 - **Progressive UX**: Cards always visible, wallet connection only when needed
 
@@ -93,6 +103,15 @@ The application uses PostgreSQL with Drizzle ORM for data persistence:
 - **Drizzle Kit**: Database migration and schema management
 
 ## Recent Changes
+- **January 28, 2025**: Added Games section with NoCrying Escape demo game
+  - Implemented new `/games` route with game cards layout and demo banner
+  - Created NoCrying Escape: Phaser.js-powered infinite runner game
+  - Generated custom SVG assets for character, obstacles (RUG, tear, coin), and backgrounds
+  - Added Phaser.js integration with proper TypeScript support and mobile controls
+  - Implemented demo-only mode with score tracking and localStorage persistence
+  - Enhanced header navigation to include Games link on both home and games pages
+  - Created reusable DemoBanner and GameModeBadge components
+
 - **January 28, 2025**: Enhanced wallet connection flow and dual mode system
   - Added PostgreSQL database integration with persistent storage
   - Implemented dual mode toggle (Demo/Real) with localStorage persistence
