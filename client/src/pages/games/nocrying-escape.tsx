@@ -93,44 +93,143 @@ export default function NoCryingEscape() {
         }
 
         preload() {
-          console.log('Preloading assets...');
+          console.log('Creating game assets programmatically...');
           
-          // Add loading progress
-          const progressBar = this.add.graphics();
-          const progressBox = this.add.graphics();
-          progressBox.fillStyle(0x222222, 0.8);
-          progressBox.fillRect(250, 280, 300, 50);
+          // Create character texture (cyan runner)
+          this.createCharacterTexture();
+          
+          // Create background texture (dark gradient)
+          this.createBackgroundTexture();
+          
+          // Create obstacle textures
+          this.createObstacleTextures();
+          
+          console.log('All assets created successfully!');
+        }
 
-          const loadingText = this.add.text(400, 240, 'Loading...', {
-            fontSize: '20px',
-            color: '#ffffff'
-          }).setOrigin(0.5, 0.5);
+        createCharacterTexture() {
+          const canvas = document.createElement('canvas');
+          canvas.width = 40;
+          canvas.height = 60;
+          const ctx = canvas.getContext('2d')!;
+          
+          // Draw character (cyan runner figure)
+          ctx.fillStyle = '#00FFFF';
+          
+          // Head
+          ctx.beginPath();
+          ctx.arc(20, 15, 8, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Body
+          ctx.fillRect(15, 20, 10, 25);
+          
+          // Arms
+          ctx.fillRect(10, 25, 5, 15);
+          ctx.fillRect(25, 25, 5, 15);
+          
+          // Legs
+          ctx.fillRect(13, 45, 6, 15);
+          ctx.fillRect(21, 45, 6, 15);
+          
+          this.textures.addCanvas('character', canvas);
+        }
 
-          this.load.on('progress', (value: number) => {
-            console.log('Loading progress:', value);
-            progressBar.clear();
-            progressBar.fillStyle(0x00ffff, 1);
-            progressBar.fillRect(260, 290, 280 * value, 30);
-          });
+        createBackgroundTexture() {
+          const canvas = document.createElement('canvas');
+          canvas.width = 800;
+          canvas.height = 400;
+          const ctx = canvas.getContext('2d')!;
+          
+          // Create gradient background
+          const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+          gradient.addColorStop(0, '#1a1a2e');
+          gradient.addColorStop(0.5, '#16213e');
+          gradient.addColorStop(1, '#0f0f23');
+          
+          ctx.fillStyle = gradient;
+          ctx.fillRect(0, 0, 800, 400);
+          
+          // Add stars
+          ctx.fillStyle = '#00FFFF';
+          for (let i = 0; i < 50; i++) {
+            const x = Math.random() * 800;
+            const y = Math.random() * 200;
+            ctx.beginPath();
+            ctx.arc(x, y, 1, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          
+          // Add ground line
+          ctx.strokeStyle = '#FF6B35';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(0, 360);
+          ctx.lineTo(800, 360);
+          ctx.stroke();
+          
+          this.textures.addCanvas('background', canvas);
+        }
 
-          this.load.on('complete', () => {
-            console.log('Asset loading complete!');
-            progressBar.destroy();
-            progressBox.destroy();
-            loadingText.destroy();
-          });
-
-          // Load assets with error handling
-          this.load.image('character', '/assets/nocrying-escape/character.svg');
-          this.load.image('background', '/assets/nocrying-escape/background.svg');
-          this.load.image('obstacle-rug', '/assets/nocrying-escape/obstacle-rug.svg');
-          this.load.image('obstacle-tear', '/assets/nocrying-escape/obstacle-tear.svg');
-          this.load.image('obstacle-coin', '/assets/nocrying-escape/obstacle-coin.svg');
-
-          // Add error handling for asset loading
-          this.load.on('loaderror', (file: any) => {
-            console.error('Failed to load asset:', file.key);
-          });
+        createObstacleTextures() {
+          // Create RUG obstacle (red rectangular rug)
+          let canvas = document.createElement('canvas');
+          canvas.width = 40;
+          canvas.height = 20;
+          let ctx = canvas.getContext('2d')!;
+          
+          ctx.fillStyle = '#FF0000';
+          ctx.fillRect(0, 0, 40, 20);
+          ctx.strokeStyle = '#800000';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(2, 2, 36, 16);
+          
+          this.textures.addCanvas('obstacle-rug', canvas);
+          
+          // Create TEAR obstacle (blue teardrop)
+          canvas = document.createElement('canvas');
+          canvas.width = 30;
+          canvas.height = 40;
+          ctx = canvas.getContext('2d')!;
+          
+          ctx.fillStyle = '#0080FF';
+          ctx.beginPath();
+          ctx.arc(15, 30, 10, 0, Math.PI * 2);
+          ctx.moveTo(15, 20);
+          ctx.lineTo(10, 5);
+          ctx.quadraticCurveTo(15, 0, 20, 5);
+          ctx.lineTo(15, 20);
+          ctx.fill();
+          
+          this.textures.addCanvas('obstacle-tear', canvas);
+          
+          // Create COIN obstacle (golden broken coin)
+          canvas = document.createElement('canvas');
+          canvas.width = 35;
+          canvas.height = 35;
+          ctx = canvas.getContext('2d')!;
+          
+          ctx.fillStyle = '#FFD700';
+          ctx.beginPath();
+          ctx.arc(17.5, 17.5, 15, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Add crack
+          ctx.strokeStyle = '#B8860B';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(8, 8);
+          ctx.lineTo(27, 27);
+          ctx.stroke();
+          
+          // Add inner circle
+          ctx.strokeStyle = '#B8860B';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(17.5, 17.5, 10, 0, Math.PI * 2);
+          ctx.stroke();
+          
+          this.textures.addCanvas('obstacle-coin', canvas);
         }
 
         create() {
@@ -139,7 +238,6 @@ export default function NoCryingEscape() {
           // Set up background
           const bg = this.add.image(0, 0, 'background');
           bg.setOrigin(0, 0);
-          bg.setScale(800 / 1280, 400 / 720);
 
           // Create ground (invisible collision)
           this.ground = this.physics.add.staticGroup();
@@ -153,8 +251,8 @@ export default function NoCryingEscape() {
           // Create player
           this.player = this.physics.add.sprite(100, groundY - 60, 'character');
           this.player.setCollideWorldBounds(true);
-          this.player.setSize(32, 48);
-          this.player.setScale(0.8);
+          this.player.setSize(30, 50);
+          this.player.setScale(1.0);
           this.physics.add.collider(this.player, this.ground);
 
           // Create obstacles group
@@ -168,9 +266,16 @@ export default function NoCryingEscape() {
           });
 
           // Instructions
-          this.add.text(400, 50, 'PRESS SPACE OR CLICK TO JUMP', {
+          this.add.text(400, 50, 'PRESS SPACE OR CLICK TO JUMP - AVOID THE OBSTACLES!', {
             fontSize: '16px',
             color: '#FF6B35',
+            fontStyle: 'bold'
+          }).setOrigin(0.5);
+
+          // Game title
+          this.add.text(400, 20, 'NOCRYING ESCAPE', {
+            fontSize: '20px',
+            color: '#00FFFF',
             fontStyle: 'bold'
           }).setOrigin(0.5);
 
@@ -201,7 +306,8 @@ export default function NoCryingEscape() {
 
         jump() {
           if (!this.isGameOver && this.player.body && this.player.body.touching.down) {
-            this.player.setVelocityY(-400);
+            this.player.setVelocityY(-500);
+            console.log('Player jumped!');
           }
         }
 
@@ -240,14 +346,39 @@ export default function NoCryingEscape() {
           const randomType = obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)];
           
           const x = 850;
-          const y = 320;
+          let y = 340; // Ground level
+          let scaleX = 1;
+          let scaleY = 1;
+          
+          // Adjust position and size based on obstacle type
+          if (randomType === 'rug') {
+            y = 350; // On ground
+            scaleX = 1.2;
+            scaleY = 1.5;
+          } else if (randomType === 'tear') {
+            y = 320; // Slightly elevated
+            scaleX = 1.0;
+            scaleY = 1.0;
+          } else if (randomType === 'coin') {
+            y = 330; // Mid-height
+            scaleX = 1.1;
+            scaleY = 1.1;
+          }
           
           const obstacle = this.physics.add.sprite(x, y, `obstacle-${randomType}`);
           obstacle.setVelocityX(-this.gameSpeed);
-          obstacle.setSize(40, 40);
-          obstacle.setScale(0.6);
+          obstacle.setScale(scaleX, scaleY);
+          
+          // Set appropriate collision box
+          if (randomType === 'rug') {
+            obstacle.setSize(35, 15);
+          } else {
+            obstacle.setSize(25, 25);
+          }
           
           this.obstacles.add(obstacle);
+          
+          console.log(`Spawned ${randomType} obstacle`);
 
           // Collision with player
           this.physics.add.overlap(this.player, obstacle, () => {
