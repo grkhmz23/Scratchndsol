@@ -18,10 +18,23 @@ export default function NoCryingEscape() {
   }, [bestScore]);
 
   const startGame = () => {
+    console.log('startGame called, current gameState:', gameState);
     setGameState('playing');
     setScore(0);
     // Initialize Phaser game here
-    initGame();
+    initGame().catch(error => {
+      console.error('Failed to initialize game:', error);
+      setGameState('menu');
+      if (gameContainerRef.current) {
+        gameContainerRef.current.innerHTML = `
+          <div class="text-center text-red-400 p-8">
+            <p class="text-xl font-bold">Game Failed to Start</p>
+            <p class="text-sm mt-2">${error.message}</p>
+            <button onclick="location.reload()" class="mt-4 px-4 py-2 bg-red-600 rounded">Reload Page</button>
+          </div>
+        `;
+      }
+    });
   };
 
   const endGame = (finalScore: number) => {
@@ -282,6 +295,15 @@ export default function NoCryingEscape() {
         scale: {
           mode: Phaser.Scale.FIT,
           autoCenter: Phaser.Scale.CENTER_BOTH
+        },
+        // Add callbacks for debugging
+        callbacks: {
+          preBoot: () => {
+            console.log('Phaser preBoot callback');
+          },
+          postBoot: () => {
+            console.log('Phaser postBoot callback - game fully initialized');
+          }
         }
       };
 
