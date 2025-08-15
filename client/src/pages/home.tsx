@@ -56,7 +56,11 @@ export default function Home() {
                 Scratch Cards
               </span>
             </Link>
-            {/* Games section temporarily hidden - focusing on casino-style scratch cards */}
+            <Link href="/casino">
+              <span className="text-gray-300 hover:text-neon-cyan transition-colors cursor-pointer font-medium">
+                Casino
+              </span>
+            </Link>
           </nav>
 
           {/* Mode Toggle and Wallet Connection */}

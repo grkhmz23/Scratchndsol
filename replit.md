@@ -103,6 +103,18 @@ The application uses PostgreSQL with Drizzle ORM for data persistence:
 - **Drizzle Kit**: Database migration and schema management
 
 ## Recent Changes
+- **January 29, 2025**: Added comprehensive Slots game with Demo and Real modes
+  - Created casino hub (/casino) with organized game categories
+  - Implemented Classic 3×3 Slots with 5 paylines and 88-90% RTP
+  - Added both Demo mode (no wallet required) and Real mode (SOL transactions)
+  - Built configurable slot machine with weighted symbol system
+  - Implemented backend API for bet quotes, payouts, and solvency checks
+  - Added automatic 90/10 split (pool/team) for all real wagers
+  - Created pool balance monitoring with critical/low/good status indicators
+  - Added anti-overpay guarantees and reserve SOL protection
+  - Implemented auto-play functionality (up to 25 spins)
+  - Created comprehensive paytable and spin history tracking
+
 - **January 29, 2025**: Disabled Games section to focus on casino-style gameplay
   - Temporarily removed Games navigation link from header
   - Commented out all game routes in App.tsx (/games, /games/nocrying-escape, etc.)

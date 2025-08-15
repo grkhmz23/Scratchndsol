@@ -1,0 +1,165 @@
+Add a Slots game with BOTH Demo and Real modes. Enforce 10% team / 90% pool split, and ensure wins never exceed the current pool balance. Include wallet adapter integration, solvency checks, and a configurable payout table targeting ~88–90% RTP.
+
+---------------------------------------
+0) Project Structure & Navigation
+---------------------------------------
+- Keep the casino hub (/casino) with categories:
+  • Scratch & SOL
+  • Slots
+  • Other
+- Add routes:
+  • /casino/slots                 -> list of machines
+  • /casino/slots/classic         -> the first playable machine
+
+- Each game card shows two CTAs:
+  • "Play Demo" (no wallet)
+  • "Play Real" (wallet required)
+
+- Add a small mode badge component:
+  • DEMO: "Demo Mode — no real payouts"
+  • REAL: "Real Mode — SOL wagers & payouts"
+
+---------------------------------------
+1) Environment & Wallet
+---------------------------------------
+Use existing env variables and add any missing:
+- VITE_SOLANA_NETWORK=mainnet-beta
+- VITE_SOLANA_RPC_URL=<valid RPC>
+- VITE_TEAM_WALLET=<team public key>
+- VITE_POOL_WALLET=<pool public key>
+
+Backend (server/.ts or /api/*):
+- POOL_WALLET_PRIVATE_KEY=<secret, server-only>
+
+Wallet:
+- @solana/wallet-adapter-react (+ Phantom/Solflare/Backpack)
+- Show connected address short-form + balance (SOL)
+
+---------------------------------------
+2) Slots Game: Classic 3x3, 5 paylines
+---------------------------------------
+Tech: React + Tailwind + Phaser.js (preferred) or Canvas.
+
+Config-driven symbols (weights + payouts):
+Create src/game/slots/classic/config.ts:
+export const SYMBOLS = [
+  { id: "seven",   weight: 5,  payout3: 20 }, // rare, big
+  { id: "diamond", weight: 8,  payout3: 10 },
+  { id: "rocket",  weight: 12, payout3: 5  },
+  { id: "coin",    weight: 16, payout3: 3  },
+  { id: "tear",    weight: 22, payout3: 2  },
+  { id: "rug",     weight: 30, payout3: 0  }
+];
+// 5 paylines: 3 horizontals + 2 diagonals
+
+Bet choices (REAL mode): 0.1, 0.3, 0.5 SOL (configurable).
+Demo bet units: 1, 2, 5 (no real value).
+
+Target RTP: ~88–90% using the above weights & lines.
+- Implement a pure RNG reel stop that samples by weights.
+- Compute total spin payout = sum of winning lines * payout multiplier * bet.
+
+---------------------------------------
+3) Demo vs Real Mode Behavior
+---------------------------------------
+DEMO MODE:
+- No wallet calls.
+- Keep a local "demo balance".
+- Show win animations and "xN" multipliers.
+
+REAL MODE:
+- Requires wallet connection.
+- On SPIN:
+  1) Charge user the bet amount in SOL via a single transaction that transfers:
+     - 90% to VITE_POOL_WALLET
+     - 10% to VITE_TEAM_WALLET
+  2) Spin reels (RNG).
+  3) Calculate spin payout (if any).
+  4) BEFORE paying, call backend solvency check and cap logic:
+     - Backend reads current pool balance.
+     - If (calculated payout > poolBalance - reserve), cap payout to allowed maximum OR decline spin (return "pool low" error before spin if needed).
+  5) If payout > 0 and allowed:
+     - Backend signs and sends SOL from pool wallet to user.
+  6) Return tx signature(s) and show result UI.
+
+Reserve (config):
+- Keep a small SOL safety reserve in pool (e.g., 0.2 SOL) so the pool never hits zero.
+- Implement bet gating: if pool < (maxPotentialWin + reserve), reduce allowed bet options or disable play until refilled.
+
+---------------------------------------
+4) Solvency & Anti-Overpay Guarantees (Backend)
+---------------------------------------
+Create backend endpoints (e.g., /api/slots/quote, /api/slots/payout):
+
+/api/slots/quote (POST):
+- Input: wallet, betLamports, expectedMaxWin (bet * highest line multiplier sum)
+- Check pool balance:
+  • If pool < expectedMaxWin + reserve => return status: "LOW_POOL", suggest lower bet or deny.
+  • Else return "OK".
+
+/api/slots/payout (POST):
+- Input: wallet, payoutLamports, spinHash, server-side validation proof
+- Validate that this payout <= poolBalance - reserve.
+- Pay using POOL_WALLET_PRIVATE_KEY.
+- Log spin result server-side (wallet, bet, payout, timestamp) for audit.
+
+/api/pool/balance (GET):
+- Return current pool SOL (for UI indicator).
+
+Important:
+- Never expose POOL_WALLET_PRIVATE_KEY to the client.
+- Rate-limit endpoints; basic HMAC or nonce on requests to prevent replay.
+
+---------------------------------------
+5) Transaction Split (Client)
+---------------------------------------
+When user hits SPIN (Real):
+- Build ONE transaction with TWO transfers from user's wallet:
+  • 90% -> VITE_POOL_WALLET
+  • 10% -> VITE_TEAM_WALLET
+- Confirm transaction before spinning (or lock in after confirm).
+- If tx fails, abort spin with UX error.
+
+---------------------------------------
+6) Image & Audio Assets (Replit Image Tool)
+---------------------------------------
+Generate cohesive assets under /public/assets/slots/classic/ :
+- Background (1280x720), neon casino theme.
+- Reel frame and cell overlay.
+- 64x64 transparent PNG symbols: seven, diamond, rocket, coin, tear, rug.
+- Buttons: SPIN, AUTO, STOP (idle/hover/active).
+- UI: "DEMO", "REAL", "BIG WIN", line-highlight overlays.
+- Simple SFX: spin start, reel stop, win (use placeholders).
+
+---------------------------------------
+7) UI/UX & States
+---------------------------------------
+- Controls: Bet selector, SPIN, AUTO (up to 25 spins), STOP.
+- Show: current mode badge, demo/real balance, last win, spin history (last 10).
+- Show pool status indicator (green/yellow/red) using /api/pool/balance:
+  • Red: pool too low for current bet's max win -> disable SPIN and show tooltip.
+
+- Error messages:
+  • "Wallet not connected" (for Real)
+  • "Pool temporarily low for this bet, choose a smaller bet or try later"
+  • "Transaction failed — please retry"
+
+---------------------------------------
+8) Acceptance Criteria
+---------------------------------------
+- /casino/slots lists the Classic 3×3 machine with "Play Demo" and "Play Real".
+- DEMO: spins, pays demo balance, animations work.
+- REAL:
+  • Connect wallet, shows SOL balance.
+  • On SPIN: one tx with 90/10 split succeeds; spin animates; result calculated.
+  • Payouts only sent AFTER solvency check; never exceed pool balance.
+  • If pool insufficient, UI blocks spin or reduces bet; clear message shown.
+- Backend logs each real spin (wallet, bet, payout, time).
+- No private key exposure; payouts signed only server-side.
+
+---------------------------------------
+9) Notes for Future Enhancements (comment in code)
+---------------------------------------
+- Optional VRF (Switchboard/Chainlink) for provable RNG later.
+- Progressive jackpot: small % of each bet feeds jackpot PDA/mint (future).
+- Token-only VIP Slots: accept $CRYNO for themed reels (future).

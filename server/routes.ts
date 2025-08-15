@@ -170,6 +170,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Slots API routes
+  app.use("/api/slots", async (req, res, next) => {
+    try {
+      const slotsRoutes = await import('./routes/slots');
+      slotsRoutes.default(req, res, next);
+    } catch (error) {
+      console.error("Error loading slots routes:", error);
+      res.status(500).json({ message: "Slots API unavailable" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

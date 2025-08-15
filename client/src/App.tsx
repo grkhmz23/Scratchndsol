@@ -12,12 +12,18 @@ import Games from "@/pages/games";
 import NoCryingEscape from "@/pages/games/nocrying-escape";
 import TestPhaser from "@/pages/games/test-phaser";
 import SimpleRunner from "@/pages/games/simple-runner";
+import Casino from "@/pages/casino";
+import Slots from "@/pages/slots";
+import ClassicSlots from "@/pages/slots/classic";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/dashboard" component={Dashboard} />
+      <Route path="/casino" component={Casino} />
+      <Route path="/casino/slots" component={Slots} />
+      <Route path="/casino/slots/classic" component={ClassicSlots} />
       {/* Games section temporarily disabled - focusing on casino-style games */}
       {/* <Route path="/games" component={Games} /> */}
       {/* <Route path="/games/nocrying-escape" component={NoCryingEscape} /> */}
