@@ -8,21 +8,12 @@ import { GameModeProvider } from "@/contexts/game-mode-context";
 import Home from "@/pages/home";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
-import Games from "@/pages/games";
-import NoCryingEscape from "@/pages/games/nocrying-escape";
-import TestPhaser from "@/pages/games/test-phaser";
-import SimpleRunner from "@/pages/games/simple-runner";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/dashboard" component={Dashboard} />
-      {/* Games section temporarily disabled - focusing on casino-style games */}
-      {/* <Route path="/games" component={Games} /> */}
-      {/* <Route path="/games/nocrying-escape" component={NoCryingEscape} /> */}
-      {/* <Route path="/games/test-phaser" component={TestPhaser} /> */}
-      {/* <Route path="/games/simple-runner" component={SimpleRunner} /> */}
       <Route component={NotFound} />
     </Switch>
   );

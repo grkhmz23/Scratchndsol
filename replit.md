@@ -1,8 +1,8 @@
-# Scratch 'n SOL - Solana Scratch Card Game
+# Scratch 'n SOL - Solana Casino Platform
 
 ## Overview
 
-Scratch 'n SOL is a complete Solana-based scratch card game web application that allows users to purchase virtual scratch cards using SOL cryptocurrency and potentially win prizes. The application features a modern, neon-themed UI with real Solana wallet integration and secure payment processing.
+Scratch 'n SOL is a complete Solana-based casino platform focused exclusively on scratch card gambling. Users can purchase virtual scratch cards using SOL cryptocurrency and potentially win prizes. The application features a modern, neon-themed UI with real Solana wallet integration and secure payment processing.
 
 ## User Preferences
 
@@ -48,13 +48,10 @@ The application uses PostgreSQL with Drizzle ORM for data persistence:
 - **Multipliers**: Random multipliers (1x, 2x, 5x, 10x) for winning games
 - **Payment Split**: 10% to team wallet, 90% to prize pool
 
-### Games Architecture
-- **NoCrying Escape**: Infinite runner built with Phaser.js and TypeScript
-- **Custom Assets**: SVG-based sprites for character, obstacles, and backgrounds  
-- **Demo Mode**: Full gameplay without wallet integration or payouts
-- **Score Persistence**: localStorage-based best score tracking
-- **Mobile Support**: Touch and keyboard controls (SPACE/click to jump)
-- **Progressive Difficulty**: Speed increases every 10 seconds
+### Casino Focus
+- **Pure Scratch Card Experience**: Dedicated casino-style gambling platform
+- **No Arcade Games**: Removed all game sections to focus on casino functionality
+- **Streamlined Interface**: Clean navigation focused solely on scratch cards
 
 ### UI/UX Design
 - **Theme**: Neon cyberpunk aesthetic with custom CSS variables
@@ -103,20 +100,12 @@ The application uses PostgreSQL with Drizzle ORM for data persistence:
 - **Drizzle Kit**: Database migration and schema management
 
 ## Recent Changes
-- **January 29, 2025**: Disabled Games section to focus on casino-style gameplay
-  - Temporarily removed Games navigation link from header
-  - Commented out all game routes in App.tsx (/games, /games/nocrying-escape, etc.)
-  - User requested focus on casino-type plays like scratch cards rather than arcade games
-  - Games section code preserved but hidden from user interface
-
-- **January 28, 2025**: Added Games section with NoCrying Escape demo game (DISABLED)
-  - Implemented new `/games` route with game cards layout and demo banner
-  - Created NoCrying Escape: Phaser.js-powered infinite runner game
-  - Generated custom SVG assets for character, obstacles (RUG, tear, coin), and backgrounds
-  - Added Phaser.js integration with proper TypeScript support and mobile controls
-  - Implemented demo-only mode with score tracking and localStorage persistence
-  - Enhanced header navigation to include Games link on both home and games pages
-  - Created reusable DemoBanner and GameModeBadge components
+- **January 29, 2025**: Complete removal of Games section - Pure casino platform
+  - Completely deleted all game-related files and directories (client/src/pages/games, client/src/game)
+  - Removed Phaser.js dependency and all arcade game assets
+  - Cleaned up navigation to focus purely on scratch cards
+  - Updated project description to reflect casino-only focus
+  - Platform now exclusively dedicated to Solana-based scratch card gambling
 
 - **January 28, 2025**: Enhanced wallet connection flow and dual mode system
   - Added PostgreSQL database integration with persistent storage
