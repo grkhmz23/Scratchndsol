@@ -17,6 +17,9 @@ export function GameStats() {
             <div className="text-3xl font-black text-neon-gold">
               {formatSOL(parseFloat((stats as any)?.totalPool || '0'))}
             </div>
+            <div className="text-xs text-gray-400 mt-2">
+              Real Mode only
+            </div>
           </CardContent>
         </Card>
         

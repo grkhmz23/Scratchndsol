@@ -210,16 +210,19 @@ export function ScratchCardModal({
       setShowResult(false);
       setGameResult(null);
       
-      await createGameMutation.mutateAsync({
-        playerWallet: isDemoMode ? walletAddress : wallet.publicKey!.toString(),
-        ticketType: ticketCost.toString(),
-        maxWin: (ticketCost * 10).toString(),
-        symbols,
-        isWin: false,
-        multiplier: 0,
-        winAmount: '0',
-        purchaseSignature,
-      });
+      // Only save to database for real games, not demo games
+      if (!isDemoMode) {
+        await createGameMutation.mutateAsync({
+          playerWallet: wallet.publicKey!.toString(),
+          ticketType: ticketCost.toString(),
+          maxWin: (ticketCost * 10).toString(),
+          symbols,
+          isWin: false,
+          multiplier: 0,
+          winAmount: '0',
+          purchaseSignature,
+        });
+      }
 
       const modeText = isDemoMode ? "Demo Game Started" : "Game Started";
       const description = isDemoMode 
