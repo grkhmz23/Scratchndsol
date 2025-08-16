@@ -100,6 +100,15 @@ The application uses PostgreSQL with Drizzle ORM for data persistence:
 - **Drizzle Kit**: Database migration and schema management
 
 ## Recent Changes
+- **January 29, 2025**: Implemented sophisticated casino engine with house edge protection
+  - Added dynamic win rates that adjust based on pool balance (25% base rate down to 15% for higher tiers)
+  - Implemented 10% house edge to ensure long-term profitability
+  - Added maximum payout limits (25% of available pool balance)
+  - Created pool balance protection with minimum 0.5 SOL reserve
+  - Added real-time win rate and pool health display in scratch card interface
+  - Pool balance checks prevent games when insufficient funds available
+  - Casino engine ensures sustainable operation and prevents wallet drainage
+
 - **January 29, 2025**: Complete removal of Games section - Pure casino platform
   - Completely deleted all game-related files and directories (client/src/pages/games, client/src/game)
   - Removed Phaser.js dependency and all arcade game assets

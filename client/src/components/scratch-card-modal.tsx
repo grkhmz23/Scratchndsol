@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { generateGameSymbols, checkWin, calculateWinAmount, formatSOL } from '@/lib/game-logic';
+import { casinoEngine, formatSOL } from '@/lib/casino-logic';
+import { useQuery } from '@tanstack/react-query';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { ScratchZone } from '@/components/scratch-zone';
@@ -67,6 +68,27 @@ const getCardDesign = (ticketCost: number) => {
     }
   };
   return designs[ticketCost as keyof typeof designs] || designs[0.1];
+};
+
+// Pool Info Component
+function PoolInfo({ ticketCost }: { ticketCost: number }) {
+  const { data: stats } = useQuery({
+    queryKey: ['/api/stats'],
+    refetchInterval: 5000,
+  });
+
+  const poolBalance = parseFloat((stats as any)?.totalPool || '0');
+  const winRateInfo = casinoEngine.getWinRateInfo(ticketCost, poolBalance);
+  const isHealthy = casinoEngine.isPoolHealthy(poolBalance);
+
+  return (
+    <div className="space-y-1">
+      <div>Max Win: {formatSOL(winRateInfo.maxPayout)} SOL • Win Rate: {(winRateInfo.currentRate * 100).toFixed(1)}%</div>
+      <div className={`text-xs ${isHealthy ? 'text-green-400' : 'text-yellow-400'}`}>
+        Pool: {formatSOL(poolBalance)} SOL • House Edge: {(casinoEngine.getHouseEdge() * 100).toFixed(0)}%
+      </div>
+    </div>
+  );
 };
 
 export function ScratchCardModal({ 
@@ -204,9 +226,15 @@ export function ScratchCardModal({
         purchaseSignature = `demo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       }
       
-      // Generate game symbols
-      const symbols = generateGameSymbols();
-      setGameSymbols(symbols);
+      // Get current pool balance for casino logic
+      const statsResponse = await apiRequest('GET', '/api/stats');
+      const stats = await statsResponse.json();
+      const currentPoolBalance = parseFloat((stats as any)?.totalPool || '0');
+      
+      // Use casino engine to determine game outcome
+      const gameOutcome = casinoEngine.calculateWin(ticketCost, currentPoolBalance);
+      
+      setGameSymbols(gameOutcome.symbols);
       setRevealedZones([false, false, false]);
       setShowResult(false);
       setGameResult(null);
@@ -216,11 +244,11 @@ export function ScratchCardModal({
         await createGameMutation.mutateAsync({
           playerWallet: wallet.publicKey!.toString(),
           ticketType: ticketCost.toString(),
-          maxWin: (ticketCost * 10).toString(),
-          symbols,
-          isWin: false,
-          multiplier: 0,
-          winAmount: '0',
+          maxWin: gameOutcome.maxPayout.toString(),
+          symbols: gameOutcome.symbols,
+          isWin: gameOutcome.canWin,
+          multiplier: gameOutcome.multiplier,
+          winAmount: gameOutcome.winAmount.toString(),
           purchaseSignature,
         });
       }
@@ -262,13 +290,18 @@ export function ScratchCardModal({
   };
 
   const handleGameComplete = async () => {
-    // Check for win
-    const result = checkWin(gameSymbols);
-    const winAmount = result.isWin ? calculateWinAmount(ticketCost, result.multiplier) : 0;
+    // Get fresh pool balance for final win calculation
+    const statsResponse = await apiRequest('GET', '/api/stats');
+    const stats = await statsResponse.json();
+    const currentPoolBalance = parseFloat((stats as any)?.totalPool || '0');
+    
+    // Recalculate with current pool balance to ensure consistency
+    const finalOutcome = casinoEngine.calculateWin(ticketCost, currentPoolBalance);
+    const winAmount = finalOutcome.canWin ? finalOutcome.winAmount : 0;
     
     const gameResult = {
-      isWin: result.isWin,
-      multiplier: result.multiplier,
+      isWin: finalOutcome.canWin,
+      multiplier: finalOutcome.multiplier,
       winAmount,
     };
 
@@ -290,10 +323,10 @@ export function ScratchCardModal({
         statsManager.recordGamePlay({
           cardType: cardTypeMap[ticketCost] || 'starter',
           solAmount: ticketCost,
-          isWin: result.isWin,
+          isWin: finalOutcome.canWin,
           prizeAmount: winAmount,
           symbols: gameSymbols,
-          multiplier: result.multiplier
+          multiplier: finalOutcome.multiplier
         });
       }
     }
@@ -302,12 +335,12 @@ export function ScratchCardModal({
     const currentWalletAddress = isDemoMode ? walletAddress : (wallet.publicKey?.toString() || walletAddress);
     
     // Handle payout if won
-    if (result.isWin && !isDemoMode && wallet.publicKey) {
+    if (finalOutcome.canWin && !isDemoMode && wallet.publicKey) {
       console.log('🏆 WINNER! Attempting payout...');
       console.log(`🏆 Win amount: ${winAmount} SOL`);
       console.log(`🏆 Player wallet: ${wallet.publicKey.toString()}`);
       console.log(`🏆 Ticket cost: ${ticketCost} SOL`);
-      console.log(`🏆 Multiplier: ${result.multiplier}x`);
+      console.log(`🏆 Multiplier: ${finalOutcome.multiplier}x`);
       
       try {
         const payoutResult = await payoutMutation.mutateAsync({
@@ -317,6 +350,12 @@ export function ScratchCardModal({
         });
         
         console.log('✅ Payout successful:', payoutResult);
+        
+        // Show result after payout completes
+        setTimeout(() => {
+          setShowResult(true);
+          onGameComplete?.(gameResult);
+        }, 1000);
         
         toast({
           title: "🎉 You Won!",
@@ -341,7 +380,7 @@ export function ScratchCardModal({
           variant: "destructive",
         });
       }
-    } else if (result.isWin && isDemoMode) {
+    } else if (finalOutcome.canWin && isDemoMode) {
       toast({
         title: "🎉 Demo Win!",
         description: `You would have won ${formatSOL(winAmount)} SOL in Real Mode!`,
@@ -349,11 +388,13 @@ export function ScratchCardModal({
       });
     }
 
-    // Show result with delay for dramatic effect
-    setTimeout(() => {
-      setShowResult(true);
-      onGameComplete(gameResult);
-    }, 1000);
+    // Show result with delay for dramatic effect (only if payout didn't already trigger it)
+    if (!finalOutcome.canWin || isDemoMode) {
+      setTimeout(() => {
+        setShowResult(true);
+        onGameComplete?.(gameResult);
+      }, 1000);
+    }
   };
 
   const handlePlayAgain = () => {
@@ -506,7 +547,7 @@ export function ScratchCardModal({
                   Scratch all 3 zones to reveal symbols. Match all 3 to win!
                 </p>
                 <div className={`${cardDesign.accentColor} text-xs mt-2`}>
-                  Max Win: {formatSOL(ticketCost * 10)} SOL • Multipliers: 1x-10x
+                  <PoolInfo ticketCost={ticketCost} />
                 </div>
               </div>
 

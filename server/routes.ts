@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertGameSchema } from "@shared/schema";
 import { SolanaService } from "./services/solana";
+import { casinoEngine } from "./services/casino-engine";
 
 const solanaService = new SolanaService();
 
@@ -138,6 +139,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error processing payout:", error);
       res.status(500).json({ message: "Failed to process payout" });
+    }
+  });
+
+  // Check if pool can support a game
+  app.post("/api/pool/check", async (req, res) => {
+    try {
+      const { ticketCost } = req.body;
+      
+      if (!ticketCost || ticketCost <= 0) {
+        return res.status(400).json({ 
+          error: 'Invalid ticket cost',
+          canPlay: false 
+        });
+      }
+
+      // Get current pool balance
+      const stats = await storage.getStats();
+      const poolBalance = parseFloat(stats?.totalPool || '0');
+      
+      // Check if game can be played
+      const gameResult = casinoEngine.calculateWin(ticketCost, poolBalance);
+      const isHealthy = casinoEngine.isPoolHealthy(poolBalance);
+      
+      res.json({
+        canPlay: poolBalance > casinoEngine.getMinPoolReserve() + ticketCost,
+        poolBalance: poolBalance,
+        maxPayout: gameResult.maxPayout,
+        currentWinRate: gameResult.adjustedWinRate,
+        isPoolHealthy: isHealthy,
+        reason: gameResult.reason || null
+      });
+      
+    } catch (error) {
+      console.error('Pool check failed:', error);
+      res.status(500).json({ 
+        error: 'Failed to check pool status',
+        canPlay: false
+      });
     }
   });
 
