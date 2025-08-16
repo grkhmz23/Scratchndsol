@@ -12,36 +12,17 @@ import Games from "@/pages/games";
 import NoCryingEscape from "@/pages/games/nocrying-escape";
 import TestPhaser from "@/pages/games/test-phaser";
 import SimpleRunner from "@/pages/games/simple-runner";
-import CasinoHub from "@/pages/casino-hub";
-import Casino from "@/pages/casino";
-import Slots from "@/pages/slots";
-import ClassicSlots from "@/pages/slots/classic";
-import ClassicRealisticSlots from "@/pages/casino/slots/classic-realistic";
-import ScratchPage from "@/pages/casino/scratch";
-import OtherGames from "@/pages/casino/other";
 
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={CasinoHub} />
-      <Route path="/casino" component={CasinoHub} />
-      <Route path="/casino/scratch" component={ScratchPage} />
-      <Route path="/casino/slots" component={Slots} />
-      <Route path="/casino/slots/classic" component={ClassicSlots} />
-      <Route path="/casino/slots/realistic" component={ClassicRealisticSlots} />
-      <Route path="/casino/other" component={OtherGames} />
+      <Route path="/" component={Home} />
       <Route path="/dashboard" component={Dashboard} />
-      
-      {/* Legacy redirects for old scratch-only routes */}
-      <Route path="/home" component={() => { window.location.href = '/casino/scratch'; return null; }} />
-      <Route path="/scratch" component={() => { window.location.href = '/casino/scratch'; return null; }} />
-      
       {/* Games section temporarily disabled - focusing on casino-style games */}
       {/* <Route path="/games" component={Games} /> */}
       {/* <Route path="/games/nocrying-escape" component={NoCryingEscape} /> */}
       {/* <Route path="/games/test-phaser" component={TestPhaser} /> */}
       {/* <Route path="/games/simple-runner" component={SimpleRunner} /> */}
-      
       <Route component={NotFound} />
     </Switch>
   );
