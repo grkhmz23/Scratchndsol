@@ -8,6 +8,7 @@ interface ScratchZoneProps {
   onComplete: () => void;
   isRevealed: boolean;
   zoneIndex: number;
+  autoReveal?: boolean;
 }
 
 export function ScratchZone({ 
@@ -17,7 +18,8 @@ export function ScratchZone({
   symbol, 
   onComplete, 
   isRevealed,
-  zoneIndex 
+  zoneIndex,
+  autoReveal = false
 }: ScratchZoneProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isScratching, setIsScratching] = useState(false);
@@ -36,6 +38,16 @@ export function ScratchZone({
     canvas.width = width;
     canvas.height = height;
 
+    // If auto-reveal is enabled, make transparent immediately
+    if (autoReveal) {
+      ctx.clearRect(0, 0, width, height);
+      if (!hasCompleted) {
+        setHasCompleted(true);
+        onComplete();
+      }
+      return;
+    }
+
     // Create gradient overlay
     const gradient = ctx.createLinearGradient(0, 0, width, height);
     gradient.addColorStop(0, '#6A0DAD');
@@ -52,7 +64,7 @@ export function ScratchZone({
     ctx.fillText(`ZONE ${zoneIndex + 1}`, width / 2, height / 2 - 5);
     ctx.font = '10px Orbitron';
     ctx.fillText('SCRATCH', width / 2, height / 2 + 10);
-  }, [width, height, zoneIndex]);
+  }, [width, height, zoneIndex, autoReveal, hasCompleted, onComplete]);
 
   // Calculate scratched percentage
   const calculateScratchedPercentage = useCallback(() => {

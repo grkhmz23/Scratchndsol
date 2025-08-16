@@ -86,6 +86,7 @@ export function ScratchCardModal({
   const [showResult, setShowResult] = useState(false);
   const [loading, setLoading] = useState(false);
   const [transactionPending, setTransactionPending] = useState(false);
+  const [autoRevealAll, setAutoRevealAll] = useState(false);
   
   // Solana wallet hooks for real mode
   const wallet = useWallet();
@@ -255,6 +256,11 @@ export function ScratchCardModal({
     });
   };
 
+  const handleScratchAll = () => {
+    setAutoRevealAll(true);
+    setRevealedZones([true, true, true]);
+  };
+
   const handleGameComplete = async () => {
     // Check for win
     const result = checkWin(gameSymbols);
@@ -355,6 +361,7 @@ export function ScratchCardModal({
     setRevealedZones([false, false, false]);
     setShowResult(false);
     setGameResult(null);
+    setAutoRevealAll(false);
     initializeGame();
   };
 
@@ -363,6 +370,7 @@ export function ScratchCardModal({
     setRevealedZones([false, false, false]);
     setShowResult(false);
     setGameResult(null);
+    setAutoRevealAll(false);
     onClose();
   };
 
@@ -502,6 +510,20 @@ export function ScratchCardModal({
                 </div>
               </div>
 
+              {/* Scratch All Button */}
+              <div className="text-center mb-4">
+                <Button 
+                  onClick={handleScratchAll}
+                  disabled={revealedZones.some(r => r)}
+                  className={`bg-gradient-to-r ${cardDesign.gradient} text-black font-black px-6 py-2 rounded-lg hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                  ⚡ SCRATCH ALL
+                </Button>
+                <p className="text-xs text-gray-400 mt-1">
+                  Reveal all zones instantly
+                </p>
+              </div>
+
               {/* Scratch Zones Grid - Responsive */}
               <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6 max-w-sm mx-auto">
                 {[0, 1, 2].map((index) => (
@@ -514,6 +536,7 @@ export function ScratchCardModal({
                       onComplete={() => handleZoneComplete(index)}
                       isRevealed={revealedZones[index]}
                       zoneIndex={index}
+                      autoReveal={autoRevealAll}
                     />
                   </div>
                 ))}
