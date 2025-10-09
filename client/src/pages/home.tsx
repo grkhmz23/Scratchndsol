@@ -8,6 +8,7 @@ import { ScratchCardModal } from '@/components/scratch-card-modal';
 import { GameStats } from '@/components/game-stats';
 import { RecentWinners } from '@/components/recent-winners';
 import logoPath from '@assets/ChatGPT Image 28 juil. 2025, 10_17_36_1753690663892.png';
+import { SiX } from 'react-icons/si';
 
 export default function Home() {
   const { isDemoMode } = useGameMode();
@@ -51,8 +52,17 @@ export default function Home() {
 
           {/* No navigation needed - pure scratch card platform */}
 
-          {/* Mode Toggle and Wallet Connection */}
+          {/* Social Media, Mode Toggle and Wallet Connection */}
           <div className="flex items-center space-x-4 lg:ml-auto">
+            <a 
+              href="https://x.com/scratchnsol" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="p-2 rounded-lg bg-neon-cyan/10 hover:bg-neon-cyan/20 border border-neon-cyan/30 hover:border-neon-cyan/50 transition-all duration-200 hover:shadow-neon-cyan group"
+              data-testid="link-social-twitter"
+            >
+              <SiX className="w-5 h-5 text-neon-cyan group-hover:text-white transition-colors" />
+            </a>
             <ModeToggle />
             {!isDemoMode && <WalletButton />}
           </div>
