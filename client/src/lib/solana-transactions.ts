@@ -31,21 +31,6 @@ export async function purchaseTicket({
   teamWallet
 }: PurchaseTicketParams): Promise<TransactionResult> {
   try {
-    console.log('🔍 INVESTIGATION: purchaseTicket called');
-    console.log('🔍 Wallet publicKey:', wallet.publicKey?.toString());
-    console.log('🔍 Connection RPC endpoint:', connection.rpcEndpoint);
-    console.log('🔍 VITE_SOLANA_RPC_URL:', import.meta.env.VITE_SOLANA_RPC_URL);
-    
-    // Manual test of connection.getLatestBlockhash()
-    console.log('🔍 INVESTIGATION: Testing manual connection.getLatestBlockhash()...');
-    try {
-      const testBlockhash = await connection.getLatestBlockhash('finalized');
-      console.log('✅ Manual blockhash test successful:', testBlockhash);
-    } catch (error) {
-      console.error('❌ Manual getLatestBlockhash() failed:', error);
-      console.error('❌ This confirms the connection object is problematic');
-    }
-    
     if (!wallet.publicKey || !wallet.sendTransaction) {
       return { success: false, error: 'Wallet not connected or does not support transactions' };
     }
@@ -54,11 +39,6 @@ export async function purchaseTicket({
     const ticketLamports = Math.floor(ticketCost * LAMPORTS_PER_SOL);
     const poolAmount = Math.floor(ticketLamports * 0.9); // 90% of ticket cost to pool
     const teamAmount = Math.floor(ticketLamports * 0.1); // 10% of ticket cost to team
-    
-    console.log('💰 PAYMENT BREAKDOWN:');
-    console.log(`💰 Ticket cost: ${ticketCost} SOL (${ticketLamports} lamports)`);
-    console.log(`💰 Pool gets: ${poolAmount / LAMPORTS_PER_SOL} SOL (${poolAmount} lamports)`);
-    console.log(`💰 Team gets: ${teamAmount / LAMPORTS_PER_SOL} SOL (${teamAmount} lamports)`);
 
     // Create transaction
     const transaction = new Transaction();
@@ -89,17 +69,12 @@ export async function purchaseTicket({
     const userBalanceSOL = await proxyRPC.getBalance(wallet.publicKey);
     const userBalance = Math.floor(userBalanceSOL * LAMPORTS_PER_SOL);
     
-    console.log('💰 BALANCE CHECK:');
-    console.log(`💰 User balance: ${userBalanceSOL} SOL (${userBalance} lamports)`);
-    
     // Get current fee estimate using proxy RPC
-    console.log('🔍 INVESTIGATION: Fetching blockhash via proxy RPC...');
     let blockhashInfo;
     try {
       blockhashInfo = await proxyRPC.getRecentBlockhash();
-      console.log('✅ Blockhash fetched via proxy:', blockhashInfo);
     } catch (error) {
-      console.error('❌ Proxy RPC getRecentBlockhash() failed:', error);
+      console.error('Failed to get recent blockhash:', error);
       throw new Error(`Failed to get recent blockhash via proxy: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
     
@@ -132,20 +107,14 @@ export async function purchaseTicket({
     );
 
     // Get recent blockhash using proxy RPC
-    console.log('🔍 INVESTIGATION: Setting transaction blockhash...');
-    console.log('🔍 Raw blockhash info:', blockhashInfo);
-    
-    // Extract blockhash from the correct structure (result.value.blockhash)
     const blockhash = blockhashInfo?.value?.blockhash;
     if (!blockhash) {
-      throw new Error(`No blockhash received from proxy RPC. Received: ${JSON.stringify(blockhashInfo)}`);
+      throw new Error(`No blockhash received from proxy RPC`);
     }
     transaction.recentBlockhash = blockhash;
     transaction.feePayer = wallet.publicKey;
-    console.log('✅ Transaction blockhash set:', blockhash);
 
-    // Send transaction using wallet adapter with proper error handling
-    console.log('🔍 INVESTIGATION: Sending transaction via wallet.sendTransaction...');
+    // Send transaction using wallet adapter
     let signature;
     try {
       signature = await wallet.sendTransaction(transaction, connection, {
@@ -153,15 +122,12 @@ export async function purchaseTicket({
         preflightCommitment: 'confirmed',
         maxRetries: 3,
       });
-      console.log('✅ Transaction sent, signature:', signature);
     } catch (error) {
-      console.error('❌ wallet.sendTransaction() failed:', error);
+      console.error('Transaction send failed:', error);
       throw error;
     }
     
-    // Wait for confirmation - use proxy RPC for consistent confirmation
-    console.log('🔍 INVESTIGATION: Confirming transaction via proxy RPC...');
-    console.log('🔍 Transaction signature:', signature);
+    // Wait for confirmation
     
     try {
       // Use a simpler confirmation approach - just check transaction status
