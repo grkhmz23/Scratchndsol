@@ -7,8 +7,6 @@ import { ModeToggle } from '@/components/mode-toggle';
 import { useGameMode } from '@/contexts/game-mode-context';
 import logoPath from '@assets/ChatGPT Image 28 juil. 2025, 10_17_36_1753690663892.png';
 
-const IS_REAL_MODE = false; // Global flag for Real Mode
-
 export default function Games() {
   const { isDemoMode } = useGameMode();
 
@@ -89,7 +87,7 @@ export default function Games() {
               <div className="space-y-3">
                 <div className="flex items-start justify-between">
                   <h3 className="text-xl font-bold text-neon-cyan">NoCrying Escape</h3>
-                  <GameModeBadge isRealMode={IS_REAL_MODE} />
+                  <GameModeBadge isRealMode={!isDemoMode} />
                 </div>
                 
                 <p className="text-gray-300 text-sm">
