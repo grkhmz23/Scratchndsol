@@ -112,4 +112,56 @@ export class SolanaService {
   getPoolWalletAddress(): string {
     return this.poolWallet.publicKey.toString();
   }
+
+  /**
+   * Verify a transaction exists on-chain and extract details
+   * Returns transaction details if valid, null if not found or invalid
+   */
+  async verifyTransaction(signature: string): Promise<{
+    valid: boolean;
+    amount?: number;
+    from?: string;
+    to?: string;
+    blockTime?: number;
+  }> {
+    try {
+      // Fetch transaction details from blockchain
+      const txInfo = await this.connection.getTransaction(signature, {
+        commitment: 'confirmed',
+        maxSupportedTransactionVersion: 0
+      });
+
+      if (!txInfo || !txInfo.meta) {
+        return { valid: false };
+      }
+
+      // Extract pre and post balances
+      const preBalances = txInfo.meta.preBalances;
+      const postBalances = txInfo.meta.postBalances;
+
+      if (!preBalances || !postBalances || preBalances.length === 0) {
+        return { valid: false };
+      }
+
+      // Calculate amount transferred (in lamports)
+      const amountLamports = preBalances[0] - postBalances[0];
+      const amountSOL = amountLamports / LAMPORTS_PER_SOL;
+
+      // Get sender and recipient addresses
+      const accountKeys = txInfo.transaction.message.getAccountKeys();
+      const from = accountKeys.get(0)?.toString() || '';
+      const to = accountKeys.get(1)?.toString() || '';
+
+      return {
+        valid: true,
+        amount: amountSOL,
+        from,
+        to,
+        blockTime: txInfo.blockTime || undefined
+      };
+    } catch (error) {
+      console.error('Error verifying transaction:', error);
+      return { valid: false };
+    }
+  }
 }

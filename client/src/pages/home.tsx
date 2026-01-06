@@ -50,7 +50,14 @@ export default function Home() {
             </div>
           </Link>
 
-          {/* No navigation needed - pure scratch card platform */}
+          {/* Navigation */}
+          <div className="hidden lg:flex items-center space-x-4 flex-1 justify-center">
+            <Link href="/bags-jackpot">
+              <a className="px-6 py-2 bg-gradient-to-r from-neon-gold/20 to-neon-orange/20 hover:from-neon-gold/30 hover:to-neon-orange/30 border-2 border-neon-gold/50 hover:border-neon-gold rounded-lg font-bold text-neon-gold hover:text-white transition-all duration-200 hover:shadow-neon-gold">
+                🎰 Bags Jackpot
+              </a>
+            </Link>
+          </div>
 
           {/* Social Media, Mode Toggle and Wallet Connection */}
           <div className="flex items-center space-x-4 lg:ml-auto">

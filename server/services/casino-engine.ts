@@ -1,4 +1,12 @@
 import { gameSymbols, multipliers } from '@shared/schema';
+import { randomBytes } from 'crypto';
+
+// Cryptographically secure random number generator
+function secureRandom(): number {
+  const bytes = randomBytes(8);
+  const num = bytes.readBigUInt64BE();
+  return Number(num) / Number(2n ** 64n);
+}
 
 interface CasinoConfig {
   houseEdge: number; // Percentage (e.g., 0.05 = 5%)
@@ -68,7 +76,7 @@ export class CasinoEngine {
     const cappedMultiplier = Math.floor(cappedWinAmount / ticketCost);
 
     // Determine if this game wins
-    const randomRoll = Math.random();
+    const randomRoll = secureRandom();
     const shouldWin = randomRoll < adjustedWinRate;
 
     if (shouldWin && cappedWinAmount > 0) {
@@ -96,12 +104,12 @@ export class CasinoEngine {
 
   private generateSymbols(): string[] {
     return Array.from({ length: 3 }, () => 
-      gameSymbols[Math.floor(Math.random() * gameSymbols.length)]
+      gameSymbols[Math.floor(secureRandom() * gameSymbols.length)]
     );
   }
 
   private generateWinningSymbols(): string[] {
-    const symbol = gameSymbols[Math.floor(Math.random() * (gameSymbols.length - 1))]; // Exclude ❌ for wins
+    const symbol = gameSymbols[Math.floor(secureRandom() * (gameSymbols.length - 1))]; // Exclude ❌ for wins
     return [symbol, symbol, symbol];
   }
 
@@ -109,7 +117,7 @@ export class CasinoEngine {
     const symbols = this.generateSymbols();
     // Ensure they don't all match
     while (symbols.every(s => s === symbols[0])) {
-      symbols[2] = gameSymbols[Math.floor(Math.random() * gameSymbols.length)];
+      symbols[2] = gameSymbols[Math.floor(secureRandom() * gameSymbols.length)];
     }
     return symbols;
   }
@@ -118,7 +126,7 @@ export class CasinoEngine {
     // Weighted selection favoring lower multipliers
     const weights = [50, 30, 15, 5]; // 1x=50%, 2x=30%, 5x=15%, 10x=5%
     const totalWeight = weights.reduce((sum, w) => sum + w, 0);
-    const random = Math.random() * totalWeight;
+    const random = secureRandom() * totalWeight;
 
     let weightSum = 0;
     for (let i = 0; i < weights.length; i++) {

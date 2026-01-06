@@ -128,17 +128,6 @@ export function ScratchCardModal({
   const { connection } = useConnection();
   const { setVisible } = useWalletModal();
 
-  const createGameMutation = useMutation({
-    mutationFn: async (gameData: any) => {
-      const response = await apiRequest('POST', '/api/games', gameData);
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/games'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/stats'] });
-    },
-  });
-
   const payoutMutation = useMutation({
     mutationFn: async (payoutData: any) => {
       const response = await apiRequest('POST', '/api/games/payout', payoutData);
@@ -206,7 +195,7 @@ export function ScratchCardModal({
 
           toast({
             title: "🎉 Payment Confirmed!",
-            description: `Successfully paid ${formatSOL(ticketCost)} SOL. Game starting...`,
+            description: `Successfully paid ${formatSOL(ticketCost)} SOL. Verifying on-chain...`,
             className: "bg-green-600/20 border-green-600/50",
           });
         } catch (error) {
@@ -234,62 +223,69 @@ export function ScratchCardModal({
         } finally {
           setTransactionPending(false);
         }
-      } else {
-        // Demo mode signature
-        purchaseSignature = `demo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      }
 
-      // Get current pool balance for casino logic
-      let currentPoolBalance = 0;
+        // ✅ NEW SECURE FLOW - Call server to verify and create game
+        try {
+          const response = await apiRequest('POST', '/api/games/create-and-play', {
+            purchaseSignature,
+            playerWallet: wallet.publicKey.toString(),
+            ticketCost: ticketCost
+          });
 
-      if (isDemoMode) {
-        // For demo mode, use a fake high pool balance so games work normally
-        currentPoolBalance = 100; // 100 SOL fake pool for demo
-      } else {
-        // For real mode, get actual blockchain pool balance
-        const statsResponse = await apiRequest('GET', '/api/stats');
-        const stats = await statsResponse.json();
-        currentPoolBalance = parseFloat((stats as any)?.totalPool || '0');
-      }
+          const gameData = await response.json();
 
-      // Use casino engine to determine game outcome
-      const gameOutcome = casinoEngine.calculateWin(ticketCost, currentPoolBalance);
+          // Server returns pre-determined outcome
+          const gameOutcome = {
+            symbols: gameData.symbols,
+            canWin: gameData.isWin,
+            multiplier: gameData.multiplier,
+            winAmount: parseFloat(gameData.winAmount),
+            maxPayout: parseFloat(gameData.maxPayout),
+            baseWinRate: 0, // Not needed for display
+            adjustedWinRate: 0 // Not needed for display
+          };
 
-      setGameSymbols(gameOutcome.symbols);
-      setInitialGameOutcome(gameOutcome); // Store the initial outcome
-      setRevealedZones([false, false, false]);
-      setShowResult(false);
-      setGameResult(null);
+          setGameSymbols(gameOutcome.symbols);
+          setInitialGameOutcome(gameOutcome);
+          setRevealedZones([false, false, false]);
+          setShowResult(false);
+          setGameResult(null);
+          setCreatedGameId(gameData.gameId);
 
-      // Only save to database for real games, not demo games
-      if (!isDemoMode) {
-        const createdGame = await createGameMutation.mutateAsync({
-          playerWallet: wallet.publicKey!.toString(),
-          ticketType: ticketCost.toString(),
-          maxWin: gameOutcome.maxPayout.toString(),
-          symbols: gameOutcome.symbols,
-          isWin: gameOutcome.canWin,
-          multiplier: gameOutcome.multiplier,
-          winAmount: gameOutcome.winAmount.toString(),
-          purchaseSignature,
-        });
-
-        // Store the game ID for later payout reference
-        if (createdGame && createdGame.id) {
-          setCreatedGameId(createdGame.id);
+          toast({
+            title: "Game Started",
+            description: `Spent ${formatSOL(ticketCost)} SOL. Scratch each zone to reveal!`,
+            className: "bg-electric-blue/20 border-electric-blue/50",
+          });
+        } catch (error) {
+          console.error('Game creation failed:', error);
+          toast({
+            title: "Game Creation Failed",
+            description: "Transaction succeeded but game creation failed. Contact support.",
+            variant: "destructive",
+          });
+          onClose();
+          return;
         }
+      } else {
+        // Demo mode - use client-side calculation for demo
+        purchaseSignature = `demo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+        const currentPoolBalance = 100; // 100 SOL fake pool for demo
+        const gameOutcome = casinoEngine.calculateWin(ticketCost, currentPoolBalance);
+
+        setGameSymbols(gameOutcome.symbols);
+        setInitialGameOutcome(gameOutcome);
+        setRevealedZones([false, false, false]);
+        setShowResult(false);
+        setGameResult(null);
+
+        toast({
+          title: "Demo Game Started",
+          description: "Scratch each zone to reveal symbols! Demo mode active.",
+          className: "bg-neon-orange/20 border-neon-orange/50",
+        });
       }
-
-      const modeText = isDemoMode ? "Demo Game Started" : "Game Started";
-      const description = isDemoMode 
-        ? "Scratch each zone to reveal symbols! Demo mode active."
-        : `Spent ${formatSOL(ticketCost)} SOL. Scratch each zone to reveal!`;
-
-      toast({
-        title: modeText,
-        description,
-        className: isDemoMode ? "bg-neon-orange/20 border-neon-orange/50" : "bg-electric-blue/20 border-electric-blue/50",
-      });
     } catch (error) {
       console.error('Game initialization failed:', error);
       toast({
@@ -359,9 +355,6 @@ export function ScratchCardModal({
       }
     }
 
-    // Update the game with final results
-    const currentWalletAddress = isDemoMode ? walletAddress : (wallet.publicKey?.toString() || walletAddress);
-
     // Handle payout if won
     if (finalOutcome.canWin && !isDemoMode && wallet.publicKey) {
       console.log('🏆 WINNER! Attempting payout...');
@@ -374,7 +367,7 @@ export function ScratchCardModal({
         const payoutResult = await payoutMutation.mutateAsync({
           playerWallet: wallet.publicKey.toString(),
           winAmount: winAmount.toString(),
-          gameId: createdGameId // Pass game ID so payout signature can be saved
+          gameId: createdGameId
         });
 
         console.log('✅ Payout successful:', payoutResult);
@@ -390,6 +383,10 @@ export function ScratchCardModal({
           description: `${formatSOL(winAmount)} SOL has been sent to your wallet!`,
           className: "bg-green-600/20 border-green-600/50",
         });
+
+        // Invalidate queries to refresh stats
+        queryClient.invalidateQueries({ queryKey: ['/api/games'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/stats'] });
       } catch (error) {
         console.error('❌ Payout failed:', error);
 

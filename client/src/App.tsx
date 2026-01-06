@@ -8,12 +8,14 @@ import { GameModeProvider } from "@/contexts/game-mode-context";
 import Home from "@/pages/home";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
+import BagsJackpot from "@/pages/bags-jackpot";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/dashboard" component={Dashboard} />
+      <Route path="/bags-jackpot" component={BagsJackpot} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -30,7 +32,7 @@ function App() {
               <div className="fixed inset-0 bg-gradient-to-br from-dark-purple/20 to-deep-space pointer-events-none"></div>
               <div className="fixed inset-0 bg-[radial-gradient(circle_at_20%_50%,rgba(0,255,255,0.1)_0%,transparent_50%)] pointer-events-none"></div>
               <div className="fixed inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(255,140,0,0.1)_0%,transparent_50%)] pointer-events-none"></div>
-              
+
               <div className="relative z-10">
                 <Toaster />
                 <Router />

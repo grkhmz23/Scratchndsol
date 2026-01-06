@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, decimal, timestamp, boolean, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, decimal, timestamp, boolean, integer, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -25,6 +25,23 @@ export const gameStats = pgTable("game_stats", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const jackpotPurchases = pgTable(
+  "jackpot_purchases",
+  {
+    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+    buyerWallet: text("buyer_wallet").notNull(),
+    signature: text("signature").notNull(),
+    mint: text("mint").notNull(),
+    treasuryTokenAccount: text("treasury_token_account").notNull(),
+    amountRaw: text("amount_raw").notNull(), // base units integer string
+    tickets: integer("tickets").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => ({
+    sigUnique: uniqueIndex("jackpot_purchases_signature_unique").on(t.signature),
+  })
+);
+
 export const insertGameSchema = createInsertSchema(games).omit({
   id: true,
   createdAt: true,
@@ -35,10 +52,17 @@ export const insertGameStatsSchema = createInsertSchema(gameStats).omit({
   updatedAt: true,
 });
 
+export const insertJackpotPurchaseSchema = createInsertSchema(jackpotPurchases).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type InsertGame = z.infer<typeof insertGameSchema>;
 export type Game = typeof games.$inferSelect;
 export type InsertGameStats = z.infer<typeof insertGameStatsSchema>;
 export type GameStats = typeof gameStats.$inferSelect;
+export type JackpotPurchase = typeof jackpotPurchases.$inferSelect;
+export type InsertJackpotPurchase = z.infer<typeof insertJackpotPurchaseSchema>;
 
 export const ticketTypes = [
   { cost: 0.1, maxWin: 1 },
