@@ -3,12 +3,11 @@ import { Button } from '@/components/ui/button';
 import { formatSOL } from '@/lib/game-logic';
 
 interface ScratchCardGridProps {
-  // New name (what the file currently uses)
+  // Support all possible callback names for compatibility
+  onCardSelect?: (cost: number) => void;
   onSelectTicket?: (cost: number) => void;
-
-  // Backward-compatible name (very likely what your parent uses)
   onSelect?: (cost: number) => void;
-
+  isDemoMode?: boolean;
   disabled?: boolean;
 }
 
@@ -76,13 +75,20 @@ const cardDesigns: CardDesign[] = [
   },
 ];
 
-export function ScratchCardGrid({ onSelectTicket, onSelect, disabled = false }: ScratchCardGridProps) {
+export function ScratchCardGrid({ 
+  onCardSelect, 
+  onSelectTicket, 
+  onSelect, 
+  isDemoMode,
+  disabled = false 
+}: ScratchCardGridProps) {
   const [selectedTicket, setSelectedTicket] = useState<number | null>(null);
 
   const emitSelect = (cost: number) => {
-    const cb = onSelectTicket ?? onSelect;
+    // Try all possible callback names
+    const cb = onCardSelect ?? onSelectTicket ?? onSelect;
     if (typeof cb !== 'function') {
-      console.error('ScratchCardGrid: missing selection callback. Pass onSelectTicket or onSelect.');
+      console.error('ScratchCardGrid: missing selection callback. Pass onCardSelect, onSelectTicket, or onSelect.');
       return;
     }
     cb(cost);
