@@ -3,37 +3,90 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertGameSchema } from "@shared/schema";
 import { SolanaService } from "./services/solana";
+import { getBaseService } from "./services/base";
+import { gameService, type ChainType } from "./services/game";
 import { casinoEngine } from "./services/casino-engine";
 import { jackpotService } from "./services/jackpot";
 import { rateLimiters, quotaMiddleware } from "./middleware/rate-limiter";
 import { idempotencyMiddleware } from "./middleware/idempotency";
 import { validateWalletAddress } from "./middleware/security";
-import { APIError, asyncHandler, handleSolanaError } from "./middleware/error-handler";
+import { APIError, asyncHandler } from "./middleware/error-handler";
 import { withRetry } from "./utils/retry";
 import { randomUUID } from "crypto";
 
 const solanaService = new SolanaService();
+const baseService = getBaseService();
+
+// Valid ticket costs per chain
+const VALID_TICKET_COSTS: Record<ChainType, number[]> = {
+  solana: [0.1, 0.2, 0.5, 0.75, 1.0],
+  base: [0.001, 0.002, 0.005, 0.0075, 0.01],
+};
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Apply rate limiting to all API routes
   app.use("/api", rateLimiters.general);
 
-  // Get game statistics with real blockchain pool balance
-  app.get("/api/stats", asyncHandler(async (_req, res) => {
-    const stats = await withRetry(() => storage.getStats(), { maxRetries: 3, baseDelayMs: 100 });
-    const poolBalance = await solanaService.getPoolBalance();
+  // Get stats for specific chain
+  app.get("/api/stats/:chain", asyncHandler(async (req, res) => {
+    const { chain } = req.params as { chain: ChainType };
+    
+    if (chain !== 'solana' && chain !== 'base') {
+      throw new APIError("Invalid chain. Use 'solana' or 'base'", 400, "VALIDATION_ERROR");
+    }
+
+    const [chainStats, poolBalance] = await Promise.all([
+      storage.getChainStats(chain),
+      chain === 'solana' 
+        ? solanaService.getPoolBalance()
+        : baseService.getPoolBalance(),
+    ]);
 
     res.json({
+      chain,
       totalPool: poolBalance.toString(),
-      totalWins: stats?.totalWins || 0,
-      lastWinAmount: stats?.lastWinAmount || "0",
-      poolWallet: solanaService.getPoolWalletAddress(),
+      totalWins: chainStats?.totalWins || 0,
+      totalGames: chainStats?.totalGames || 0,
+      lastWinAmount: chainStats?.lastWinAmount || "0",
+      poolWallet: chain === 'solana' 
+        ? solanaService.getPoolWalletAddress()
+        : baseService.getPoolAddress(),
     });
   }));
 
-  // Get recent wins
-  app.get("/api/games/recent-wins", asyncHandler(async (_req, res) => {
-    const recentWins = await storage.getRecentWins(10);
+  // Get combined stats (legacy endpoint)
+  app.get("/api/stats", asyncHandler(async (_req, res) => {
+    const [solanaStats, baseStats, solanaBalance, baseBalance] = await Promise.all([
+      storage.getChainStats('solana'),
+      storage.getChainStats('base'),
+      solanaService.getPoolBalance(),
+      baseService.getPoolBalance(),
+    ]);
+
+    res.json({
+      solana: {
+        totalPool: solanaBalance.toString(),
+        totalWins: solanaStats?.totalWins || 0,
+        totalGames: solanaStats?.totalGames || 0,
+        poolWallet: solanaService.getPoolWalletAddress(),
+      },
+      base: {
+        totalPool: baseBalance.toString(),
+        totalWins: baseStats?.totalWins || 0,
+        totalGames: baseStats?.totalGames || 0,
+        poolWallet: baseService.getPoolAddress(),
+      },
+    });
+  }));
+
+  // Get recent wins (combined)
+  app.get("/api/games/recent-wins", asyncHandler(async (req, res) => {
+    const { chain } = req.query as { chain?: ChainType };
+    
+    const recentWins = chain 
+      ? await storage.getRecentWinsByChain(chain, 10)
+      : await storage.getRecentWins(10);
+      
     res.json(recentWins);
   }));
 
@@ -45,85 +98,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
     idempotencyMiddleware,
     validateWalletAddress,
     asyncHandler(async (req, res) => {
-      const { purchaseSignature, playerWallet, ticketCost } = req.body;
+      const { 
+        purchaseSignature, 
+        playerWallet, 
+        ticketCost, 
+        chain = 'solana' 
+      } = req.body as {
+        purchaseSignature: string;
+        playerWallet: string;
+        ticketCost: number;
+        chain: ChainType;
+      };
+
+      // Validate chain
+      if (chain !== 'solana' && chain !== 'base') {
+        throw new APIError("Invalid chain", 400, "VALIDATION_ERROR");
+      }
 
       // Validate required fields
       if (!purchaseSignature || !playerWallet || !ticketCost) {
         throw new APIError("Missing required fields", 400, "VALIDATION_ERROR");
       }
 
-      // Validate ticket cost
-      const validTicketCosts = [0.1, 0.2, 0.5, 0.75, 1.0];
-      if (!validTicketCosts.includes(parseFloat(ticketCost))) {
-        throw new APIError("Invalid ticket cost", 400, "VALIDATION_ERROR");
+      // Validate ticket cost for chain
+      const validCosts = VALID_TICKET_COSTS[chain];
+      if (!validCosts.includes(parseFloat(ticketCost.toString()))) {
+        throw new APIError(`Invalid ticket cost for ${chain}`, 400, "VALIDATION_ERROR");
       }
 
-      const isDemoMode = playerWallet.startsWith("Demo") || playerWallet.startsWith("demo");
+      const isDemoMode = playerWallet.toLowerCase().startsWith("demo");
 
+      // Verify transaction if not demo
       if (!isDemoMode) {
-        // Verify transaction on-chain with retry
-        const txVerification = await withRetry(
-          () => solanaService.verifyTransaction(purchaseSignature),
-          { maxRetries: 3, baseDelayMs: 1000 }
-        );
+        const poolAddress = chain === 'solana'
+          ? solanaService.getPoolWalletAddress()
+          : baseService.getPoolAddress();
 
-        if (!txVerification.valid) {
-          throw new APIError("Invalid transaction signature", 400, "TRANSACTION_INVALID");
+        const verification = await gameService.verifyPurchase({
+          chain,
+          txHash: purchaseSignature,
+          expectedAmount: parseFloat(ticketCost.toString()),
+          expectedRecipient: poolAddress,
+        });
+
+        if (!verification.valid) {
+          throw new APIError(verification.error || "Transaction verification failed", 400, "TRANSACTION_INVALID");
         }
 
-        // Verify recipient
-        const expectedRecipient = solanaService.getPoolWalletAddress();
-        if (txVerification.to !== expectedRecipient) {
-          throw new APIError("Transaction recipient mismatch", 400, "TRANSACTION_INVALID");
-        }
-
-        // Verify amount (allow 1% variance for fees)
-        if (!txVerification.amount || Math.abs(txVerification.amount - ticketCost) > ticketCost * 0.01) {
-          throw new APIError(
-            `Transaction amount mismatch. Expected ${ticketCost} SOL`,
-            400,
-            "TRANSACTION_AMOUNT_MISMATCH"
-          );
-        }
-
-        // Check for duplicate transaction
+        // Check for duplicate
         const existingGame = await storage.getGameByPurchaseSignature(purchaseSignature);
         if (existingGame) {
           throw new APIError("Transaction already used", 409, "DUPLICATE_TRANSACTION");
         }
       }
 
-      // Get pool balance and generate outcome
-      const poolBalance = await solanaService.getPoolBalance();
-      const gameResult = casinoEngine.calculateWin(parseFloat(ticketCost), poolBalance);
-
-      // Create game record
-      const gameData = {
+      // Create game
+      const game = await gameService.createGame({
+        chain,
         playerWallet,
-        ticketType: ticketCost.toString(),
-        maxWin: gameResult.maxPayout.toString(),
-        symbols: gameResult.symbols,
-        isWin: gameResult.canWin && gameResult.winAmount > 0,
-        multiplier: gameResult.multiplier,
-        winAmount: gameResult.winAmount.toString(),
-        purchaseSignature: isDemoMode ? `demo_${randomUUID()}` : purchaseSignature,
-        payoutSignature: null,
-      };
-
-      const game = await storage.createGame(gameData);
-
-      res.status(201).json({
-        gameId: game.id,
-        symbols: gameResult.symbols,
-        isWin: gameResult.canWin && gameResult.winAmount > 0,
-        multiplier: gameResult.multiplier,
-        winAmount: gameResult.winAmount,
-        maxPayout: gameResult.maxPayout,
+        ticketCost: parseFloat(ticketCost.toString()),
+        purchaseTxHash: purchaseSignature,
+        isDemoMode,
       });
+
+      res.status(201).json(game);
     })
   );
 
-  // Process payout with critical rate limiting
+  // Process payout
   app.post(
     "/api/games/payout",
     rateLimiters.critical,
@@ -131,24 +173,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     idempotencyMiddleware,
     validateWalletAddress,
     asyncHandler(async (req, res) => {
-      const { playerWallet, winAmount, gameId } = req.body as { 
-        playerWallet: string; 
-        winAmount: string; 
-        gameId: string 
+      const { 
+        playerWallet, 
+        winAmount, 
+        gameId, 
+        chain = 'solana' 
+      } = req.body as {
+        playerWallet: string;
+        winAmount: string;
+        gameId: string;
+        chain: ChainType;
       };
 
       if (!playerWallet || !winAmount || !gameId) {
         throw new APIError("Missing required fields", 400, "VALIDATION_ERROR");
-      }
-
-      // Demo mode check
-      const isDemoMode = playerWallet.toLowerCase().startsWith("demo");
-      if (isDemoMode) {
-        return res.json({ 
-          success: true, 
-          signature: `demo_payout_${randomUUID()}`, 
-          demo: true 
-        });
       }
 
       // Verify game exists
@@ -178,39 +216,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check payout limits
       const SECURITY_LIMITS = { MAX_SINGLE_PAYOUT: 10, MAX_HOURLY_PAYOUT: 50, MAX_DAILY_PAYOUT: 200 };
-      if (requestedWin > SECURITY_LIMITS.MAX_SINGLE_PAYOUT) {
+      const maxPayout = chain === 'solana' ? SECURITY_LIMITS.MAX_SINGLE_PAYOUT : 0.1; // 0.1 ETH max
+      if (requestedWin > maxPayout) {
         throw new APIError(
-          `Payout exceeds maximum of ${SECURITY_LIMITS.MAX_SINGLE_PAYOUT} SOL`,
+          `Payout exceeds maximum of ${maxPayout} ${chain === 'solana' ? 'SOL' : 'ETH'}`,
           429,
           "PAYOUT_LIMIT_EXCEEDED"
         );
       }
 
-      // Send payout with retry
-      const payoutResult = await solanaTransactionWithRetry(async () => {
-        const result = await solanaService.sendPayout(playerWallet, requestedWin);
-        if (!result) throw new Error("Payout transaction failed");
-        return result;
+      // Process payout
+      const result = await gameService.processPayout({
+        gameId,
+        playerWallet,
+        winAmount: requestedWin,
+        chain,
       });
-      
-      if (!payoutResult) {
-        throw new APIError("Payout transaction failed", 500, "PAYOUT_FAILED");
+
+      if (!result.success) {
+        throw new APIError(result.error || "Payout failed", 500, "PAYOUT_FAILED");
       }
-      const payoutSignature = payoutResult;
 
-      // Update stats and game record
-      const currentStats = await storage.getStats();
-      await storage.updateStats({
-        totalWins: (currentStats?.totalWins || 0) + 1,
-        lastWinAmount: winAmount,
-      });
-      await storage.updateGamePayout(gameId, payoutSignature);
-
-      res.json({ success: true, signature: payoutSignature });
+      res.json({ success: true, signature: result.signature });
     })
   );
 
-  // RPC Proxy with fallback
+  // Pool balance endpoint
+  app.get("/api/pool/balance/:chain", asyncHandler(async (req, res) => {
+    const { chain } = req.params as { chain: ChainType };
+    
+    if (chain !== 'solana' && chain !== 'base') {
+      throw new APIError("Invalid chain", 400, "VALIDATION_ERROR");
+    }
+
+    const balance = chain === 'solana'
+      ? await solanaService.getPoolBalance()
+      : await baseService.getPoolBalance();
+
+    res.json({
+      chain,
+      balance,
+      poolWallet: chain === 'solana'
+        ? solanaService.getPoolWalletAddress()
+        : baseService.getPoolAddress(),
+    });
+  }));
+
+  // Pool check endpoint (can play?)
+  app.post("/api/pool/check", rateLimiters.general, asyncHandler(async (req, res) => {
+    const { ticketCost, chain = 'solana' } = req.body as { ticketCost: number; chain: ChainType };
+
+    if (!ticketCost || ticketCost <= 0) {
+      throw new APIError("Invalid ticket cost", 400, "VALIDATION_ERROR");
+    }
+
+    const poolBalance = await gameService.getPoolBalance(chain);
+    const gameResult = casinoEngine.calculateWin(ticketCost, poolBalance);
+    const isHealthy = casinoEngine.isPoolHealthy(poolBalance);
+
+    res.json({
+      canPlay: poolBalance > casinoEngine.getMinPoolReserve() + ticketCost,
+      poolBalance,
+      maxPayout: gameResult.maxPayout,
+      currentWinRate: gameResult.adjustedWinRate,
+      isPoolHealthy: isHealthy,
+      reason: gameResult.reason || null,
+      chain,
+    });
+  }));
+
+  // Get player's game history
+  app.get("/api/games/:wallet", rateLimiters.general, validateWalletAddress, asyncHandler(async (req, res) => {
+    const { wallet } = req.params;
+    const { chain } = req.query as { chain?: ChainType };
+    
+    const games = chain
+      ? await storage.getGamesByWalletAndChain(wallet, chain)
+      : await storage.getGamesByWallet(wallet);
+      
+    res.json(games);
+  }));
+
+  // RPC Proxy (existing - for Solana)
   app.post("/api/rpc-proxy", rateLimiters.general, asyncHandler(async (req, res) => {
     const heliusKey = process.env.HELIUS_API_KEY;
     const endpoints = [
@@ -228,7 +315,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(req.body),
-          signal: AbortSignal.timeout(10000), // 10 second timeout per endpoint
+          signal: AbortSignal.timeout(10000),
         });
 
         if (response.ok) {
@@ -245,44 +332,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     throw new APIError("All RPC endpoints unavailable", 503, "RPC_UNAVAILABLE");
   }));
 
-  // Pool check endpoint
-  app.post("/api/pool/check", rateLimiters.general, asyncHandler(async (req, res) => {
-    const { ticketCost } = req.body;
-
-    if (!ticketCost || ticketCost <= 0) {
-      throw new APIError("Invalid ticket cost", 400, "VALIDATION_ERROR");
-    }
-
-    const poolBalance = await solanaService.getPoolBalance();
-    const gameResult = casinoEngine.calculateWin(ticketCost, poolBalance);
-
-    res.json({
-      canPlay: poolBalance > casinoEngine.getMinPoolReserve() + ticketCost,
-      poolBalance,
-      maxPayout: gameResult.maxPayout,
-      currentWinRate: gameResult.adjustedWinRate,
-      isPoolHealthy: casinoEngine.isPoolHealthy(poolBalance),
-      reason: gameResult.reason || null,
-    });
-  }));
-
-  // Get player's game history
-  app.get("/api/games/:wallet", rateLimiters.general, validateWalletAddress, asyncHandler(async (req, res) => {
-    const { wallet } = req.params;
-    const games = await storage.getGamesByWallet(wallet);
-    res.json(games);
-  }));
-
-  // Pool balance endpoint
-  app.get("/api/pool/balance", rateLimiters.general, asyncHandler(async (_req, res) => {
-    const balance = await solanaService.getPoolBalance();
-    res.json({
-      balance,
-      poolWallet: solanaService.getPoolWalletAddress(),
-    });
-  }));
-
-  // Jackpot endpoints
+  // Jackpot endpoints (unchanged - Solana only for now)
   app.get("/api/jackpot/status", rateLimiters.jackpot, asyncHandler(async (_req, res) => {
     const status = await jackpotService.getStatus();
     res.json(status);
