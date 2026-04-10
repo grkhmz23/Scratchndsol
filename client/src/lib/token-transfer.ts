@@ -58,6 +58,6 @@ export function buildTransferCheckedIx(params: {
       { pubkey: destination, isSigner: false, isWritable: true },
       { pubkey: authority, isSigner: true, isWritable: false },
     ],
-    data,
+    data: Buffer.from(data),
   });
 }
