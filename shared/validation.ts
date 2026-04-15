@@ -6,32 +6,36 @@
 
 import { z } from "zod";
 
-// Solana wallet address validation
+// Multi-chain wallet address validation (Solana or EVM)
 export const walletAddressSchema = z.string().refine(
   (val) => {
     // Allow demo wallets
     if (val.startsWith("demo") || val.startsWith("Demo")) return true;
     // Solana base58 address format
-    return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(val);
+    if (/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(val)) return true;
+    // EVM address format
+    return /^0x[a-fA-F0-9]{40}$/.test(val);
   },
-  { message: "Invalid Solana wallet address" }
+  { message: "Invalid wallet address" }
 );
 
-// Transaction signature validation
+// Transaction signature validation (Solana base58 or EVM hex hash)
 export const transactionSignatureSchema = z.string().refine(
   (val) => {
     // Demo signatures
     if (val.startsWith("demo_")) return true;
-    // Base58 signature format (varies in length)
-    return /^[1-9A-HJ-NP-Za-km-z]{64,128}$/.test(val);
+    // Solana base58 signature format
+    if (/^[1-9A-HJ-NP-Za-km-z]{64,128}$/.test(val)) return true;
+    // EVM transaction hash (0x + 64 hex chars)
+    return /^0x[a-fA-F0-9]{64}$/.test(val);
   },
-  { message: "Invalid transaction signature" }
+  { message: "Invalid transaction signature or hash" }
 );
 
-// Ticket cost validation
+// Ticket cost validation (Solana SOL or Base USDC)
 export const ticketCostSchema = z.number().refine(
-  (val) => [0.1, 0.2, 0.5, 0.75, 1.0].includes(val),
-  { message: "Invalid ticket cost. Must be 0.1, 0.2, 0.5, 0.75, or 1.0 SOL" }
+  (val) => [0.1, 0.2, 0.5, 0.75, 1.0, 1, 2, 5, 10, 25].includes(val),
+  { message: "Invalid ticket cost" }
 );
 
 // UUID validation
@@ -41,7 +45,8 @@ export const uuidSchema = z.string().uuid();
 export const createGameRequestSchema = z.object({
   purchaseSignature: transactionSignatureSchema,
   playerWallet: walletAddressSchema,
-  ticketCost: z.number().positive().max(10, "Ticket cost too high"),
+  ticketCost: z.number().positive().max(25, "Ticket cost too high"),
+  chain: z.enum(["solana", "base"]).default("solana"),
 });
 
 // Payout request
@@ -49,6 +54,7 @@ export const payoutRequestSchema = z.object({
   playerWallet: walletAddressSchema,
   winAmount: z.string().regex(/^\d+(\.\d+)?$/, "Invalid amount format"),
   gameId: uuidSchema,
+  chain: z.enum(["solana", "base"]).default("solana"),
 });
 
 // Jackpot purchase request

@@ -77,7 +77,7 @@ function sanitizeObject(obj: any): void {
   }
 }
 
-// Validate Solana wallet addresses
+// Validate wallet addresses (Solana or EVM)
 export function validateWalletAddress(req: Request, res: Response, next: NextFunction) {
   const fields = ["playerWallet", "wallet", "winnerPublicKey", "buyerWallet"];
   
@@ -87,7 +87,8 @@ export function validateWalletAddress(req: Request, res: Response, next: NextFun
       if (value.startsWith("demo") || value.startsWith("Demo")) continue;
       
       const solanaRegex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
-      if (!solanaRegex.test(value)) {
+      const evmRegex = /^0x[a-fA-F0-9]{40}$/;
+      if (!solanaRegex.test(value) && !evmRegex.test(value)) {
         return res.status(400).json({ error: "INVALID_WALLET", message: `Invalid ${field}` });
       }
     }

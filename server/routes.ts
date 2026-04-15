@@ -215,11 +215,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Check payout limits
-      const SECURITY_LIMITS = { MAX_SINGLE_PAYOUT: 10, MAX_HOURLY_PAYOUT: 50, MAX_DAILY_PAYOUT: 200 };
-      const maxPayout = chain === 'solana' ? SECURITY_LIMITS.MAX_SINGLE_PAYOUT : 0.1; // 0.1 ETH max
+      const SECURITY_LIMITS = { MAX_SINGLE_PAYOUT_SOL: 10, MAX_SINGLE_PAYOUT_BASE: 250, MAX_HOURLY_PAYOUT: 50, MAX_DAILY_PAYOUT: 200 };
+      const maxPayout = chain === 'solana' ? SECURITY_LIMITS.MAX_SINGLE_PAYOUT_SOL : SECURITY_LIMITS.MAX_SINGLE_PAYOUT_BASE; // 250 USDC max on Base
       if (requestedWin > maxPayout) {
         throw new APIError(
-          `Payout exceeds maximum of ${maxPayout} ${chain === 'solana' ? 'SOL' : 'ETH'}`,
+          `Payout exceeds maximum of ${maxPayout} ${chain === 'solana' ? 'SOL' : 'USDC'}`,
           429,
           "PAYOUT_LIMIT_EXCEEDED"
         );

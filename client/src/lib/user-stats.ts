@@ -28,8 +28,8 @@ export class UserStatsManager {
   private walletAddress: string;
   private storageKey: string;
 
-  constructor(publicKey: PublicKey) {
-    this.walletAddress = publicKey.toString();
+  constructor(publicKey: PublicKey | string) {
+    this.walletAddress = typeof publicKey === 'string' ? publicKey : publicKey.toString();
     this.storageKey = `${STORAGE_KEY_PREFIX}${this.walletAddress}`;
   }
 
@@ -134,7 +134,7 @@ export class UserStatsManager {
 }
 
 // Utility function to get stats manager for current wallet
-export function getUserStatsManager(publicKey: PublicKey | null): UserStatsManager | null {
+export function getUserStatsManager(publicKey: PublicKey | string | null): UserStatsManager | null {
   if (!publicKey) return null;
   return new UserStatsManager(publicKey);
 }

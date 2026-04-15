@@ -1,11 +1,18 @@
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
-import { formatSOL, formatWalletAddress } from '@/lib/game-logic';
+import { formatWalletAddress } from '@/lib/game-logic';
+
+function formatWinAmount(amount: number, chain?: string): string {
+  if (chain === 'base') {
+    return `${amount.toFixed(0)} USDC`;
+  }
+  return `${amount.toFixed(2)} SOL`;
+}
 
 export function RecentWinners() {
   const { data: recentWins = [] } = useQuery({
     queryKey: ['/api/games/recent-wins'],
-    refetchInterval: 30000, // Refetch every 30 seconds
+    refetchInterval: 30000,
   });
 
   if (!recentWins || (recentWins as any[]).length === 0) {
@@ -40,12 +47,17 @@ export function RecentWinners() {
                       </div>
                       <div className="text-xs text-gray-400">
                         {new Date(win.createdAt).toLocaleString()}
+                        {win.chain && win.chain !== 'solana' ? (
+                          <span className="ml-2 px-1.5 py-0.5 bg-blue-600/20 text-blue-400 rounded text-[10px] uppercase">
+                            {win.chain}
+                          </span>
+                        ) : null}
                       </div>
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="text-success-green font-black">
-                      {formatSOL(parseFloat(win.winAmount))}
+                      {formatWinAmount(parseFloat(win.winAmount), win.chain)}
                     </div>
                     <div className="text-xs text-neon-gold">
                       {win.multiplier}x multiplier
