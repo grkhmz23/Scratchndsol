@@ -1,6 +1,7 @@
 # Ignore server source files (not needed for static build)
 server/
 api/
+api/index.ts
 
 # Ignore dev files
 node_modules
