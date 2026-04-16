@@ -40,3 +40,6 @@ vite.config.ts.*
 # Temporary files
 *.tmp
 *.temp
+contracts/base/lib/
+contracts/base/out/
+contracts/base/cache/
