@@ -10,6 +10,7 @@ import CreatorNew from "@/pages/creator-new";
 import CreatorDetail from "@/pages/creator-detail";
 import PlayCampaign from "@/pages/play-campaign";
 import Pool from "@/pages/pool";
+import HowItWorks from "@/pages/how-it-works";
 
 function Router() {
   return (
@@ -21,7 +22,7 @@ function Router() {
       <Route path="/creator/:campaignId" component={CreatorDetail} />
       <Route path="/play/:campaignId" component={PlayCampaign} />
       <Route path="/pool" component={Pool} />
-      {/* <Route path="/bags-jackpot" component={BagsJackpot} /> */}
+      <Route path="/how-it-works" component={HowItWorks} />
       <Route component={NotFound} />
     </Switch>
   );

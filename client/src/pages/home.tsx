@@ -63,15 +63,11 @@ export default function Home() {
                 Creator
               </a>
             </Link>
-            {/* Bags Jackpot hidden temporarily */}
-            {/*
-            <Link href="/bags-jackpot">
-              <a className="px-6 py-2 bg-gradient-to-r from-neon-gold/20 to-neon-orange/20 hover:from-neon-gold/30 hover:to-neon-orange/30 border-2 border-neon-gold/50 hover:border-neon-gold rounded-lg font-bold text-neon-gold hover:text-white transition-all duration-200 hover:shadow-neon-gold flex items-center gap-2">
-                <img src="/assets/bagsjackpotlogo.png" alt="Bags Jackpot" className="w-6 h-6 object-contain" />
-                Bags Jackpot
+            <Link href="/how-it-works">
+              <a className="px-4 py-2 bg-gradient-to-r from-gray-800/50 to-gray-700/50 hover:from-gray-700/50 hover:to-gray-600/50 border border-gray-600/50 hover:border-gray-500 rounded-lg font-bold text-gray-300 hover:text-white transition-all duration-200">
+                How It Works
               </a>
             </Link>
-            */}
           </div>
 
           {/* Social Media, Chain Selector, Mode Toggle and Wallet Connection */}
@@ -147,6 +143,19 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-neon-cyan/30 mt-20 py-8">
         <div className="max-w-7xl mx-auto px-4 text-center">
+          <div className="flex items-center justify-center gap-4 text-sm mb-4">
+            <Link href="/how-it-works">
+              <a className="text-neon-cyan hover:text-white transition-colors">How It Works</a>
+            </Link>
+            <span className="text-gray-600">|</span>
+            <Link href="/pool">
+              <a className="text-neon-purple hover:text-white transition-colors">LP Pool</a>
+            </Link>
+            <span className="text-gray-600">|</span>
+            <Link href="/creator">
+              <a className="text-neon-orange hover:text-white transition-colors">Creator</a>
+            </Link>
+          </div>
           <div className="text-gray-400 text-sm mb-4">
             Powered by {chainName} Blockchain • Built with ❤️ for the crypto community
           </div>

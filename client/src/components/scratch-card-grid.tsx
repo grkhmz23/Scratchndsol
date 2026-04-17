@@ -107,7 +107,7 @@ export function ScratchCardGrid({
                    index === 1 ? 'Better odds, bigger wins' :
                    index === 2 ? 'Premium experience' :
                    index === 3 ? 'High stakes, high rewards' :
-                   'Ultimate jackpot potential'}
+                   'Maximum multiplier potential'}
                 </p>
 
                 <div className="bg-dark-purple/30 rounded-lg p-3 mb-4">
